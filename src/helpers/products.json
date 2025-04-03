@@ -1,0 +1,241 @@
+[
+  {
+    "id": 1,
+    "title": "Mykonos Highlights Tour",
+    "alias": "prod.1",
+    "is_published": true,
+    "publish_date_from": "2025-02-12",
+    "publish_date_to": "2025-12-31",
+    "multiple_contact_fields": false,
+    "latitude": null,
+    "longitude": null,
+    "second_latitude": null,
+    "second_longitude": null,
+    "deposit_percentage": null,
+    "ratings_count": 0,
+    "average_rating": null,
+    "starting_price": 100,
+    "starting_discounted_price": null,
+    "average_duration": 300,
+    "booking_url": "test.link-twist.com/s/1",
+    "first_bookable_date": "2025-03-22",
+    "subtitle": null,
+    "description": null,
+    "highlights": null,
+    "inclusions": null,
+    "additional_info": null,
+    "categories": [
+      {
+        "id": 1,
+        "parent_category_id": 0,
+        "alias": "landtours",
+        "name": "Land Tours"
+      }
+    ],
+    "fields": [
+      {
+        "alias": "name",
+        "name": "Name",
+        "type": "text",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "email",
+        "name": "Email",
+        "type": "email",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "comments",
+        "name": "Comments",
+        "type": "textarea",
+        "is_required": false,
+        "options": []
+      },
+      {
+        "alias": "surname",
+        "name": "Surname",
+        "type": "text",
+        "is_required": true,
+        "options": []
+      }
+    ],
+    "media": null
+  },
+  {
+    "id": 4,
+    "title": "Santorini Wine Roads",
+    "alias": "santoriniwineroads",
+    "is_published": true,
+    "publish_date_from": "2025-02-26",
+    "publish_date_to": "2025-12-31",
+    "multiple_contact_fields": true,
+    "latitude": null,
+    "longitude": null,
+    "second_latitude": null,
+    "second_longitude": null,
+    "deposit_percentage": null,
+    "ratings_count": 0,
+    "average_rating": null,
+    "starting_price": 180,
+    "starting_discounted_price": null,
+    "average_duration": 360,
+    "booking_url": "test.link-twist.com/s/4",
+    "first_bookable_date": "2025-03-22",
+    "subtitle": null,
+    "description": null,
+    "highlights": null,
+    "inclusions": null,
+    "additional_info": null,
+    "categories": [
+      {
+        "id": 1,
+        "parent_category_id": 0,
+        "alias": "landtours",
+        "name": "Land Tours"
+      }
+    ],
+    "fields": [
+      {
+        "alias": "name",
+        "name": "Name",
+        "type": "text",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "email",
+        "name": "Email",
+        "type": "email",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "comments",
+        "name": "Comments",
+        "type": "textarea",
+        "is_required": false,
+        "options": []
+      }
+    ],
+    "media": null
+  },
+  {
+    "id": 5,
+    "title": "Acropolis Guided Tour",
+    "alias": "acropolisguidedtour",
+    "is_published": true,
+    "publish_date_from": "2025-02-26",
+    "publish_date_to": "2025-12-31",
+    "multiple_contact_fields": true,
+    "latitude": null,
+    "longitude": null,
+    "second_latitude": null,
+    "second_longitude": null,
+    "deposit_percentage": null,
+    "ratings_count": 0,
+    "average_rating": null,
+    "starting_price": 272,
+    "starting_discounted_price": null,
+    "average_duration": 0,
+    "booking_url": "test.link-twist.com/s/5",
+    "first_bookable_date": "2025-03-22",
+    "subtitle": null,
+    "description": null,
+    "highlights": null,
+    "inclusions": null,
+    "additional_info": null,
+    "categories": [
+      {
+        "id": 1,
+        "parent_category_id": 0,
+        "alias": "landtours",
+        "name": "Land Tours"
+      }
+    ],
+    "fields": [
+      {
+        "alias": "name",
+        "name": "Name",
+        "type": "text",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "email",
+        "name": "Email",
+        "type": "email",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "comments",
+        "name": "Comments",
+        "type": "textarea",
+        "is_required": false,
+        "options": []
+      }
+    ],
+    "media": null
+  },
+  {
+    "id": 6,
+    "title": "Athens Capital Hotel",
+    "alias": "athenscapitalhotel",
+    "is_published": true,
+    "publish_date_from": "2025-02-26",
+    "publish_date_to": "2025-12-31",
+    "multiple_contact_fields": false,
+    "latitude": null,
+    "longitude": null,
+    "second_latitude": null,
+    "second_longitude": null,
+    "deposit_percentage": null,
+    "ratings_count": 0,
+    "average_rating": null,
+    "starting_price": 293,
+    "starting_discounted_price": null,
+    "average_duration": 0,
+    "booking_url": "test.link-twist.com/s/6",
+    "first_bookable_date": "2025-03-22",
+    "subtitle": null,
+    "description": null,
+    "highlights": null,
+    "inclusions": null,
+    "additional_info": null,
+    "categories": [
+      {
+        "id": 1,
+        "parent_category_id": 0,
+        "alias": "landtours",
+        "name": "Land Tours"
+      }
+    ],
+    "fields": [
+      {
+        "alias": "name",
+        "name": "Name",
+        "type": "text",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "email",
+        "name": "Email",
+        "type": "email",
+        "is_required": true,
+        "options": []
+      },
+      {
+        "alias": "comments",
+        "name": "Comments",
+        "type": "textarea",
+        "is_required": false,
+        "options": []
+      }
+    ],
+    "media": null
+  }
+]

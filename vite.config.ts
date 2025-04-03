@@ -7,8 +7,25 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'https://test.api.link-twist.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+    },
+  },
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+        // treat all tags with a dash as custom elements
+        // isCustomElement: (tag) => tag.includes('-'),
+        },
+      },
+    }),
     legacy()
   ],
   resolve: {

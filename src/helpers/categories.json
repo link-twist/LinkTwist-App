@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "parent_category_id": 0,
+    "alias": "landtours",
+    "name": "Land Tours"
+  },
+  {
+    "id": 2,
+    "parent_category_id": 0,
+    "alias": "sharedcruises",
+    "name": "Shared Cruises"
+  }
+]
