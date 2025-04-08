@@ -1,3 +1,6 @@
+ion-toolbar {
+    padding-bottom: 5px;
+}
 
 ion-card {
     box-shadow: none;
@@ -106,9 +109,21 @@ ion-input.custom .input-wrapper {
 
 ion-datetime-button.ion-color::part(native) {
     background-color: var(--ion-background-color-step-50);
-    /* border: 1px solid; */
 }
 
 ion-icon.icon-text {
     margin-right: 8px;
+}
+
+ion-loading.loader-style {
+    --background: #ffffff;
+}
+
+ion-loading.loader-style .loading-wrapper {
+    height: 50px;
+    width: 50px;
+    padding: 10px;
+    border-radius: 50%;
+    -webkit-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }

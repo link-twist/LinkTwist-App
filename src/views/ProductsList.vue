@@ -1,18 +1,18 @@
 <template>
   <ion-page>
     <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-menu-button color="primary"></ion-menu-button>
+      <ion-toolbar mode="ios">
+        <ion-title>Bookings by Product</ion-title>
+        <ion-buttons slot="end">
+          <ion-menu-button color="dark"></ion-menu-button>
         </ion-buttons>
-        <ion-title>Manage Products</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Manage Products</ion-title>
+          <ion-title size="large">Bookings by Product</ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -22,7 +22,7 @@
             <ion-card-title>Card Title</ion-card-title>
             <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
           </ion-card-header> -->
-          <ion-card-content>
+          <!-- <ion-card-content>
             <ion-select aria-label="Favorite Fruit" value="apple">
               <ion-select-option value="apple">All Product Categories</ion-select-option>
               <ion-select-option value="banana">Banana</ion-select-option>
@@ -34,7 +34,7 @@
               <ion-select-option value="orange">Inactive Only</ion-select-option>
             </ion-select>
             <ion-input label="Search" label-placement="floating" fill="outline" placeholder="Title"></ion-input>
-          </ion-card-content>
+          </ion-card-content> -->
         </ion-card>
       </div>
     </ion-content>

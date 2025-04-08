@@ -1,0 +1,80 @@
+[
+    {
+        "date_time": "2025-04-06 10:00:00+03:00",
+        "vacancies": 5,
+        "group_size": null,
+        "displayable_price": null,
+        "displayable_price_discounted": null,
+        "pricing": [
+            {
+                "participant_type_alias": "adult",
+                "prices": [
+                    {
+                        "pricing_type": "standard",
+                        "fixed_price": 0.0000,
+                        "price_per_participant": 50.0000,
+                        "pax_from": 1,
+                        "pax_to": 22
+                    }
+                ]
+            },
+            {
+                "participant_type_alias": "child",
+                "prices": [
+                    {
+                        "pricing_type": "standard",
+                        "fixed_price": 0.0000,
+                        "price_per_participant": 20.0000,
+                        "pax_from": 1,
+                        "pax_to": 10
+                    }
+                ]
+            },
+            {
+                "participant_type_alias": "infant",
+                "prices": [
+                    {
+                        "pricing_type": "standard",
+                        "fixed_price": 0,
+                        "price_per_participant": 0,
+                        "pax_from": 1,
+                        "pax_to": 5
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "date_time": "2025-04-06 15:00:00+03:00",
+        "vacancies": 18,
+        "group_size": null,
+        "displayable_price": null,
+        "displayable_price_discounted": null,
+        "pricing": [
+            {
+                "participant_type_alias": "adult",
+                "prices": [
+                    {
+                        "pricing_type": "standard",
+                        "fixed_price": 0.0000,
+                        "price_per_participant": 50.0000,
+                        "pax_from": 1,
+                        "pax_to": 22
+                    }
+                ]
+            },
+            {
+                "participant_type_alias": "child",
+                "prices": [
+                    {
+                        "pricing_type": "standard",
+                        "fixed_price": 0.0000,
+                        "price_per_participant": 20.0000,
+                        "pax_from": 1,
+                        "pax_to": 10
+                    }
+                ]
+            }
+        ]
+    }
+]

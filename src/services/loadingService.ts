@@ -3,8 +3,9 @@ import { loadingController } from '@ionic/vue';
 export const loaderService = {
   async startLoader() {
     const loader = await loadingController.create({
-      cssClass: 'my-custom-class',
-      duration: 10000
+      cssClass: 'loader-style',
+      duration: 10000,
+      showBackdrop: false
     });
 
     await loader.present();

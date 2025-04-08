@@ -9,7 +9,7 @@ import NewBooking from '@/views/NewBooking.vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '',
-    redirect: '/BookingsList'
+    redirect: '/LoginPage'
   },
   {
     path: '/LoginPage',

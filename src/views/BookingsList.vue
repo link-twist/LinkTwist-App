@@ -1,11 +1,11 @@
 <template>
   <ion-page>
     <ion-header :translucent="true">
-      <ion-toolbar>
+      <ion-toolbar mode="ios">
         <ion-buttons :router-link="'/NewBooking'" slot="start">
           <ion-icon class="addButton" :icon="addCircleOutline"></ion-icon>
         </ion-buttons>
-        <ion-title>Bookings</ion-title>
+        <ion-title><h2>Bookings</h2></ion-title>
         <ion-buttons slot="end">
           <ion-menu-button color="dark"></ion-menu-button>
         </ion-buttons>
@@ -18,6 +18,9 @@
           <ion-title size="large">Bookings</ion-title>
         </ion-toolbar>
       </ion-header>
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
 
       <div id="container"> 
         <ion-grid>
@@ -60,13 +63,18 @@
                   <h2 v-for="(count, alias) in booking.participants" :key="alias">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</h2>
                 </ion-label>
               </ion-item>
+              <ion-item v-if="bookings.length === 0">
+                <ion-text class="text-center">
+                  <h2>There are no bookings for this day!</h2>
+                </ion-text>
+              </ion-item>
             </ion-list>
           </ion-card-content>
         </ion-card>
       </div>
       <ion-modal id="date-modal" ref="modal" trigger="open-date-modal">
         <div class="wrapper">
-          <ion-datetime v-model="selectedDate" @ionChange="selectDate()" presentation="date"></ion-datetime>
+          <ion-datetime v-model="selectedDate" @ionChange="getBookings()" presentation="date" mode="ios"></ion-datetime>
         </div>
       </ion-modal>
     </ion-content>
@@ -74,15 +82,17 @@
 </template>
 
 <script lang="ts">
-  import { ref, onMounted, watch } from 'vue';
+  import { ref } from 'vue';
   import { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonAlert, IonChip } from '@ionic/vue';
-  import { IonCol, IonGrid, IonRow } from '@ionic/vue';
+  import { IonCol, IonGrid, IonRow, IonRefresher, IonRefresherContent } from '@ionic/vue';
   import { useProductStore } from "@/stores/useProductStore";
   import { apiService } from '@/services/apiService';
   import { loaderService } from '@/services/loadingService';
   import { IonDatetime } from '@ionic/vue';
   import { search, addCircleOutline, calendarOutline } from 'ionicons/icons';
   import { defineComponent } from 'vue';
+  import { format } from "date-fns";
+  import { onIonViewWillEnter } from '@ionic/vue';
 
   export default defineComponent({
     name: "BookingsList",
@@ -90,47 +100,109 @@
       IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, 
       IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, 
       IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, 
-      IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonAlert, IonChip
+      IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonAlert, IonChip, IonRefresher, IonRefresherContent
     },
     setup() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const today = `${year}-${month}-${day}`;
+      const loader = ref(null);
+      const selectedDate = ref(format(new Date(), 'yyyy-MM-dd'));
+      const dateFrom = ref('');
+      const dateTo = ref('');
+      const bookings = ref([]);
+
+      const defaultLoader = ref(true);
+
+      const handleRefresh = async (event: CustomEvent) => {
+        setTimeout(async () => {
+          defaultLoader.value = false;
+          await getBookings();
+          event.target.complete();
+          defaultLoader.value = true;
+        }, 500);
+      };
+
+      const getBookings = async () => {
+        if (defaultLoader.value == true) {
+          loader.value = await loaderService.startLoader();
+        }
+
+        const dateStr = selectedDate.value.split('T')[0];
+        dateFrom.value = `${dateStr} 00:00:00`;
+        dateTo.value = `${dateStr} 23:59:59`;
+
+        let result = await apiService.getBookings(dateFrom.value, dateTo.value);
+        bookings.value = (result || []).filter(
+          booking => !['pending', 'deprecated'].includes(booking.booking_status)
+        );
+
+        console.log('Filtered bookings:', bookings.value);
+
+        loaderService.stopLoading(loader.value);
+      };
+
+      onIonViewWillEnter(() => {
+        getBookings();
+      });
 
       const productStore = useProductStore();
 
-      return { products: productStore.products as any[], options: productStore.options as any[], apiService, loaderService, today, search, addCircleOutline, calendarOutline };
+      return { 
+        products: productStore.products as any[],
+        options: productStore.options as any[],
+        bookings,
+        selectedDate,
+        apiService,
+        loaderService,
+        search,
+        addCircleOutline,
+        calendarOutline,
+        productStore,
+        handleRefresh
+      };
     },
     data() {
       return {
         loader: null as any,
-        bookings: [] as any[],
+        // bookings: [] as any[],
         productMap: {} as Record<number, string>,
         productOptionsMap: {} as Record<string, string>, 
-        selectedDate: '',
+        // selectedDate: format(new Date(), 'yyyy-MM-dd'),
         dateFrom: '',
         dateTo: ''
       };
     },
     async mounted() {
-      this.selectedDate = this.today;
-      // this.selectedDate = '2025-03-28';
-      await this.selectDate();
+      // await this.getBookings();
       await this.loadProductsAndOptions();
     },
     methods: {
-      async selectDate() {
+      async getBookings() {
+        this.loader = await this.loaderService.startLoader();
         this.dateFrom = `${this.selectedDate.split('T')[0]} 00:00:00`;
         this.dateTo = `${this.selectedDate.split('T')[0]} 23:59:59`;
-        this.$refs.modal.$el.dismiss();
-        await this.getBookings(this.dateFrom, this.dateTo);
+
+        const modal = this.$refs.modal as InstanceType<typeof IonModal>;
+        modal.$el.dismiss();
+
+        this.bookings = await this.apiService.getBookings(this.dateFrom, this.dateTo) || [];
+
+        this.bookings = this.bookings.filter((booking) => 
+          !['pending', 'deprecated'].includes(booking.booking_status)
+        );
+
+        console.log('Filtered bookings:', this.bookings);
+
+        this.loaderService.stopLoading(this.loader);
       },
       async loadProductsAndOptions() {
-        if (!this.products.length || !this.options.length) {
-          console.warn("Products or Options are empty, delaying loading...");
-          return;
+        if (this.products.length == 0 || this.options.length == 0) {
+          this.loader = await this.loaderService.startLoader();
+          await this.productStore.loadProducts();
+          this.products = this.productStore.products;
+          await this.productStore.loadOptions();
+          this.options = this.productStore.options;
+          this.loaderService.stopLoading(this.loader);
+          // console.warn("Products or Options are empty, delaying loading...");
+          // return;
         }
 
         this.productMap = Object.fromEntries(this.products.map(p => [p.id, p.title]));
@@ -138,18 +210,12 @@
           this.options.map(o => [`${o.product_id}-${o.id}`, o.title])
         );
       },
-      async getBookings(dateFrom: string, dateTo: string) {
-        this.loader = await this.loaderService.startLoader();
-
-        this.bookings = await this.apiService.getBookings(dateFrom, dateTo) || [];
-        this.loaderService.stopLoading(this.loader);
-      },
       getBookingItems() {
         const groups: Record<string, any> = {};
 
         this.bookings.forEach((booking) => {
-          booking.items.forEach((item) => {
-            const key = `${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
+          booking.items.forEach((item: { product_id: number; product_option_id: number; activity_date_time: string; participant_type_alias: string; }) => {
+            const key = `${booking.code}-${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
 
             if (!groups[key]) {
               groups[key] = {
@@ -189,7 +255,7 @@
 
 <style scoped>
 ion-buttons ion-icon.addButton {
-  padding-inline-start: var(--padding-start);
+  padding-inline-start: 10px;
   padding-inline-end: 10px;
   font-size: 2em;
 }
@@ -220,8 +286,10 @@ ion-chip.time-chip {
   --color: #adefd1;
   font-weight: 700;
 }
-</style>
 
-function loadProductsAndOptions() {
-  throw new Error('Function not implemented.');
+ion-item h2 {
+  margin-left: auto;
+  margin-right: auto
 }
+
+</style>

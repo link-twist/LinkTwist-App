@@ -1,14 +1,14 @@
 <template>
   <ion-app>
-    <ion-split-pane v-if="!loading" content-id="main-content">
+    <ion-split-pane content-id="main-content">
       <ion-menu content-id="main-content" type="overlay">
         <ion-content>
           <ion-list id="inbox-list">
-            <ion-list-header>Inbox</ion-list-header>
+            <ion-list-header>LinkTwist</ion-list-header>
             <ion-note>hi@ionicframework.com</ion-note>
 
             <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
-              <ion-item @click="selectedIndex = i" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated" :class="{ selected: selectedIndex === i }">
+              <ion-item @click="selectedIndex = i" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated">
                 <ion-icon aria-hidden="true" slot="start" :ios="p.iosIcon" :md="p.mdIcon"></ion-icon>
                 <ion-label>{{ p.title }}</ion-label>
               </ion-item>
@@ -18,9 +18,6 @@
       </ion-menu>
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </ion-split-pane>
-    <ion-content v-else>
-      <ion-loading message="Dismissing after 3 seconds..."> </ion-loading>
-    </ion-content>
   </ion-app>
 </template>
 
@@ -49,9 +46,8 @@ import {
   paperPlaneSharp,
   logOutOutline
 } from 'ionicons/icons';
-import { loaderService } from '@/services/loadingService';
 import { useProductStore } from '@/stores/useProductStore';
-import { sqliteService } from '@/services/sqliteService';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 const loading = ref(true);
 let loader = ref() as any;
@@ -77,6 +73,10 @@ const appPages = [
   },
 ];
 
+const setStatusBarStyleLight = async () => {
+  await StatusBar.setStyle({ style: Style.Light });
+};
+
 const path = window.location.pathname;
 if (path !== undefined) {
   selectedIndex.value = appPages.findIndex((page) => page.title.toLowerCase() === path.toLowerCase());
@@ -86,18 +86,10 @@ const productStore = useProductStore();
 
 onMounted(async () => {
   try {
-    loading.value = true;
-    loader = await loaderService.startLoader();
-    await sqliteService.initializeDB();
     await productStore.loadProducts();
     await productStore.loadOptions();
   } catch (error) {
     console.error("Error initializing the app:", error);
-  } finally {
-    setTimeout(() => { 
-      loading.value = false;
-      loaderService.stopLoading(loader);
-    }, 10);
   }
 });
 </script>
