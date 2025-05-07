@@ -1,14 +1,14 @@
 <template>
   <ion-app>
     <ion-split-pane content-id="main-content">
-      <ion-menu content-id="main-content" type="overlay">
+      <ion-menu content-id="main-content" type="overlay" v-if="showMenu">
         <ion-content>
           <ion-list id="inbox-list">
-            <ion-list-header>LinkTwist</ion-list-header>
-            <ion-note>hi@ionicframework.com</ion-note>
+            <ion-list-header>{{ productStore.name }}</ion-list-header>
+            <!-- <ion-note>hi@ionicframework.com</ion-note> -->
 
             <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
-              <ion-item @click="selectedIndex = i" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated">
+              <ion-item @click="urlTest()" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated">
                 <ion-icon aria-hidden="true" slot="start" :ios="p.iosIcon" :md="p.mdIcon"></ion-icon>
                 <ion-label>{{ p.title }}</ion-label>
               </ion-item>
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import {
   IonApp,
   IonContent,
@@ -40,57 +40,86 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 import {
-  mailOutline,
-  mailSharp,
-  paperPlaneOutline,
-  paperPlaneSharp,
+  addCircleOutline,
+  calendarOutline,
   logOutOutline
 } from 'ionicons/icons';
 import { useProductStore } from '@/stores/useProductStore';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { AuthService } from '@/services/authService';
+import { useBackButton } from '@ionic/vue';
+import { useRoute, useRouter } from 'vue-router';
+import { App as CapacitorApp } from '@capacitor/app';
 
-const loading = ref(true);
-let loader = ref() as any;
-const selectedIndex = ref(0);
 const appPages = [
   {
     title: 'Bookings List',
     url: '/BookingsList',
-    iosIcon: paperPlaneOutline,
-    mdIcon: paperPlaneSharp,
+    iosIcon: calendarOutline,
+    mdIcon: calendarOutline,
   },
   {
-    title: 'Products List',
-    url: '/ProductsList',
-    iosIcon: mailOutline,
-    mdIcon: mailSharp,
+    title: 'New Booking',
+    url: '/NewBookingSidebar',
+    iosIcon: addCircleOutline,
+    mdIcon: addCircleOutline,
   },
   {
     title: 'Logout',
-    url: '/LoginPage',
+    url: '/logout',
     iosIcon: logOutOutline,
     mdIcon: logOutOutline,
   },
 ];
 
-const setStatusBarStyleLight = async () => {
-  await StatusBar.setStyle({ style: Style.Light });
-};
+const isLoggedIn = ref(false);
+const productStore = useProductStore();
+const route = useRoute();
+const router = useRouter();
 
-const path = window.location.pathname;
-if (path !== undefined) {
-  selectedIndex.value = appPages.findIndex((page) => page.title.toLowerCase() === path.toLowerCase());
+const showMenu = computed(() => {
+  if (productStore.name === '') {
+    return false;
+  } else {
+    return true;
+  }
+});
+
+const urlTest = () => {
+  console.log(route.path)
 }
 
-const productStore = useProductStore();
-
 onMounted(async () => {
-  try {
-    await productStore.loadProducts();
-    await productStore.loadOptions();
-  } catch (error) {
-    console.error("Error initializing the app:", error);
+  await StatusBar.setStyle({ style: Style.Light });
+
+  isLoggedIn.value = await AuthService.isLoggedIn();
+
+  if (isLoggedIn.value && productStore.name === '') {
+    const user = await AuthService.getUser();
+    productStore.setUserFromToken(user);
   }
+
+  if (isLoggedIn.value) {
+    try {
+      await productStore.loadProducts();
+      await productStore.loadOptions();
+    } catch (error) {
+      console.error("Error initializing the app:", error);
+    }
+  }
+
+  useBackButton(10, () => {
+    router.go(-1); // Correct: go back in history
+  });
+  
+  useBackButton(-1, () => {
+    const currentPath = route.path;
+
+    console.log(currentPath);
+    if (currentPath === '/login' || currentPath === '/BookingsList') {
+      CapacitorApp.exitApp();
+    }
+  });
 });
 </script>
 
@@ -110,7 +139,7 @@ ion-menu.md ion-list {
   padding: 20px 0;
 }
 
-ion-menu.md ion-note {
+ion-menu ion-list-header {
   margin-bottom: 30px;
 }
 

@@ -4,7 +4,7 @@ export const loaderService = {
   async startLoader() {
     const loader = await loadingController.create({
       cssClass: 'loader-style',
-      duration: 10000,
+      duration: 15000,
       showBackdrop: false
     });
 

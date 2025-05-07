@@ -22,7 +22,7 @@
         <div id="container">
           <ion-card>
             <ion-card-content>
-              <ion-select class="mt-input" aria-label="fruit" placeholder="Select Product" label="Product" label-placement="floating" interface="action-sheet" v-model="item.product_id">
+              <ion-select class="mt-input" aria-label="fruit" placeholder="Select Product" label="Product" label-placement="floating" interface="action-sheet" v-model="item.product_id" @ionChange="resetItems()">
                 <ion-select-option v-for="product in products" :value="product.id" :key="product.id">
                   {{ product.title }}
                 </ion-select-option>
@@ -64,16 +64,18 @@
               <ion-text v-if="selectedAvailability.vacancies > 0">Vacancies: {{ selectedAvailability.vacancies }}</ion-text>
             </ion-card-content>
           </ion-card>
-          <ion-card>
+          <ion-card v-if="extras.length > 0">
             <ion-card-content>
-              <ion-select class="mt-input" aria-label="fruit" label="Extras" label-placement="floating" placeholder="Add extras" interface="action-sheet">
-                <ion-select-option v-for="extra in extras" :value="extra.id" :key="extra.id">{{ extra.title }}</ion-select-option>
+              <ion-select class="mt-input" aria-label="fruit" label="Extras" label-placement="floating" placeholder="Add extras" interface="action-sheet" v-model="selectedExtra.extra_alias">
+                <ion-select-option v-for="extra in extras" :value="extra.alias" :key="extra.alias">{{ extra.title }}</ion-select-option>
+                <ion-select-option value="" v-if="selectedExtra.extra_alias">Without extras</ion-select-option>
               </ion-select>
+              <ion-input v-model="selectedExtra.quantity" class="mt-input" type="text" label="Extra quantity" label-placement="floating" placeholder="Fill the quantity of the selected extra" v-if="selectedExtra.extra_alias"></ion-input>
             </ion-card-content>
           </ion-card>
           <ion-card>
             <ion-card-content>
-              <ion-input v-model="item.discount_code" class="mt-input" type="text" label="Special code" label-placement="floating" placeholder="Add special code"></ion-input>
+              <ion-input class="mt-input" type="text" label="Special code" label-placement="floating" placeholder="Add special code"></ion-input>
             </ion-card-content>
           </ion-card>
           <ion-card>
@@ -109,11 +111,6 @@
             </ion-card-content>
           </ion-card>
           <ion-button class="btn-complete" expand="block" color="dark" size="large" mode="ios" :disabled="item.product_option_id == 0" @click="submitForm()">Complete</ion-button>
-          <!-- <ion-footer mode="ios">
-            <ion-toolbar>
-              <ion-title color="primary" @click="submitForm()">Complete</ion-title>
-            </ion-toolbar>
-          </ion-footer> -->
         </div>
       </ion-content>
       <ion-modal :keep-contents-mounted="true" ref="dateModal">
@@ -121,8 +118,7 @@
           id="datetime"
           v-model="dateValue"
           presentation="date"
-          :disabled="item.product_id == 0 || item.product_option_id == 0"
-          @ionChange="getAvailability(false)"
+          @ionChange="getAvailabilityFromDatePicker(false)"
           mode="ios"
         ></ion-datetime>
       </ion-modal>
@@ -134,17 +130,24 @@
         mode="ios"
         @didDismiss="goToBookingsList"
       ></ion-alert>
+      <ion-alert
+        :is-open="isOpenNotAvailableDay"
+        message="There is not availability for this date. Next available day selected."
+        :buttons="completeAlertButton"
+        backdropDismiss="false"
+        mode="ios"
+      ></ion-alert>
     </ion-page>
   </template>
   
 <script lang="ts">
-  import { defineComponent, ref, inject } from 'vue';
+  import { defineComponent, ref, inject, isProxy, toRaw } from 'vue';
   import { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonFooter, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonAlert, IonBackButton, IonRadio, IonRadioGroup } from '@ionic/vue';
   import { IonCol, IonGrid, IonRow } from '@ionic/vue';
   import { useProductStore } from "@/stores/useProductStore";
   import { apiService } from '@/services/apiService';
   import { IonDatetime, IonDatetimeButton } from '@ionic/vue';
-  import { search, addCircleOutline, addOutline, removeOutline } from 'ionicons/icons';
+  import { search, addCircleOutline, addOutline, removeOutline, calendarOutline, book } from 'ionicons/icons';
   import { format, parseISO } from "date-fns";
   import { loaderService } from '@/services/loadingService';
 
@@ -154,9 +157,9 @@
     setup() {
       const backButtonText = ref('Go Back');
       const productStore = useProductStore();
-      const cryoptojs = inject('cryptojs')
+      const cryoptojs = inject('cryptojs');
 
-      return { products: productStore.products as any[], options: productStore.options as any[], apiService, cryoptojs, search, addCircleOutline, addOutline, removeOutline, backButtonText, loaderService };
+      return { products: productStore.products as any[], options: productStore.options as any[], selectedProductOption: productStore.selectedProductOption as any[], productStore, apiService, cryoptojs, search, addCircleOutline, addOutline, removeOutline, calendarOutline, backButtonText, loaderService };
     },
     data(){
       return{
@@ -175,7 +178,13 @@
             { email: ""}
           ]
         },
+        dummyEmail: 'dummy@participant.gr',
         extras: [] as any,
+        selectedExtra: {
+          extra_alias: null,
+          quantity: 1,
+          answer: null
+        },
         availabilityMock: [
     {
         "date_time": "2025-04-06 10:00:00+03:00",
@@ -316,6 +325,7 @@
         timezoneOffset: '' as string|null,
         nextDayCheckLimit: 0,
         isOpenCompleteAlert: false as boolean,
+        isOpenNotAvailableDay: false as boolean,
         completeAlertButton: ['OK']
       }
     },
@@ -328,18 +338,30 @@
         let totalPrice = 0;
         const participants = this.item.participants;
         const pricing = this.selectedAvailability.pricing;
+        const extras = this.extras;
+        const selectedExtra = this.selectedExtra;
+
+        let fixedPriceAlreadyAdded = false;
 
         participants.forEach(participant => {
           const participantPricing = pricing.find(p => p.participant_type_alias === participant.alias);
           if (!participantPricing) return;
 
           let remainingQuantity = participant.quantity;
-          
+
           // Sort pricing rules by pax_from (just in case)
           const sortedPrices = participantPricing.prices.sort((a, b) => a.pax_from - b.pax_from);
 
           for (let i = 0; i < sortedPrices.length && remainingQuantity > 0; i++) {
             const priceTier = sortedPrices[i];
+
+            // Handle fixed price (only once)
+            if (priceTier.fixed_price && !fixedPriceAlreadyAdded) {
+              totalPrice += priceTier.fixed_price;
+              fixedPriceAlreadyAdded = true;
+              break; // no need to continue with other tiers for this type
+            }
+
             const tierCapacity = priceTier.pax_to - priceTier.pax_from + 1;
             const paxInThisTier = Math.min(remainingQuantity, tierCapacity);
 
@@ -347,100 +369,184 @@
             remainingQuantity -= paxInThisTier;
           }
         });
+
+        // Extras
+        if (extras.length > 0 && selectedExtra.extra_alias && selectedExtra.quantity > 0) {
+          const extraPrice = extras.find(p => p.alias === selectedExtra.extra_alias).price;
+          totalPrice += extraPrice * selectedExtra.quantity;
+        }
+
         this.finalPrice = totalPrice;
         return totalPrice;
       }
     },
-    // mounted() { 
-    //   console.log('mounted availabilityMock', this.availabilityMock);
-    // },
+    mounted() {
+      if (this.selectedProductOption.length !== 0) {
+        this.item = {
+          booking_code: "",
+          digest: "",
+          product_id: this.selectedProductOption.product_id,
+          product_option_id: this.selectedProductOption.product_option_id,
+          activity_date_time: "",
+          participants: [
+            { alias: "adult", quantity: 1 }
+          ],
+          contact_data: [
+            { email: ""}
+          ]
+        };
+        this.dateValue = format(this.selectedProductOption.activity_date_time, 'yyyy-MM-dd');
+        this.getAvailability(false);
+      }
+
+      this.productStore.resetSelectedProductOption();
+    },
     methods: {
+      resetItems() {
+        this.item = {
+          booking_code: this.item.booking_code,
+          digest: this.item.digest,
+          product_id: this.item.product_id,
+          product_option_id: 0,
+          activity_date_time: "",
+          participants: [
+            { alias: "adult", quantity: 1 }
+          ],
+          contact_data: this.item.contact_data
+        };
+        this.availableHours = [];
+        this.extras = [];
+        this.selectedExtra = {
+          extra_alias: null,
+          quantity: 1,
+          answer: null
+        };
+        this.finalPrice = 0;
+
+        this.selectedAvailability = {
+          date_time: "",
+          vacancies: 0,
+          group_size: null,
+          displayable_price: null,
+          displayable_price_discounted: null,
+          pricing: [
+            { participant_type_alias: '' }
+          ]
+        };
+      },
       goToBookingsList() {
-        console.log('OOk!')
         this.isOpenCompleteAlert = false;
         this.$router.push('/BookingsList')
+      },
+      getAvailabilityFromDatePicker(checkNextDay: boolean) {
+        if (this.item.product_id !== 0 && this.item.product_option_id !== 0) {
+          this.getAvailability(checkNextDay);
+        } else {
+          const dateModal = this.$refs.dateModal as InstanceType<typeof IonModal>;
+          dateModal.$el.dismiss();
+        }
       },
       async getAvailability(checkNextDay: boolean) {
         // Initially checking the present date. If there is not availability (vacancies) we check automatically the next day.
         // We put a limit in an amount of days (30)
         this.selectedAvailability.vacancies = 0;
-        if (checkNextDay == true) {
+
+        if (checkNextDay) {
           this.nextDayCheckLimit += 1;
           if (this.nextDayCheckLimit > 30) {
             alert('This product is not available for the next 30 days');
+            this.nextDayCheckLimit = 0;
+            this.loaderService.stopLoading(this.loader);
             return;
           }
+
           this.dateValue = this.getNextDay(this.dateValue);
-          console.log('checkNextDay', this.dateValue);
         } else {
           this.loader = await this.loaderService.startLoader();
+
+          const dateModal = this.$refs.dateModal as InstanceType<typeof IonModal>;
+          dateModal.$el.dismiss();
         }
 
-        const dateModal = this.$refs.dateModal as InstanceType<typeof IonModal>;
-        dateModal.$el.dismiss();
         const dateFrom = `${this.dateValue}T00:00:00${format(new Date(), 'XXX')}`;
         const dateTo = `${this.dateValue}T23:59:59${format(new Date(), 'XXX')}`;
-      
-        let availability = await this.apiService.getProductOptionAvailability(this.item.product_id, this.item.product_option_id, dateFrom, dateTo);
-        // let availability = this.availabilityMock;
 
-        // We format the hours of the availability to assign them on the 'ion-select'
-        this.formatAvailability(availability);
+        try {
+          const availability = await this.apiService.getProductOptionAvailability(
+            this.item.product_id,
+            this.item.product_option_id,
+            dateFrom,
+            dateTo
+          );
+
+          // We format the hours of the availability to assign them on the 'ion-select'
+          await this.formatAvailability(availability);
+        } catch (error) {
+          console.error('Error fetching availability:', error);
+          alert('An error occurred while checking availability.');
+          this.loaderService.stopLoading(this.loader);
+        }
       },
-      formatAvailability(availability: any[]) {
+
+      async formatAvailability(availability: any[]) {
         this.availableHours = [];
         this.totalAvailability = [];
+
+        let foundFirst = false;
+
         for (let i = 0; i < availability.length; i++) {
-          // Firtly check if there are vacancies on that date
-          if (availability[i].vacancies > 0) {
-            this.totalAvailability.push(availability[i]);
-            if (i == 0) {
-              this.selectedAvailability = availability[i];
+          const item = availability[i];
+
+          if (item.vacancies > 0) {
+            this.totalAvailability.push(item);
+
+            // Assign the first available option as selected
+            if (!foundFirst) {
+              this.selectedAvailability = item;
+              foundFirst = true;
             }
 
-            // Keep only the hours for example '10:00'
-            const dateTime = this.totalAvailability[i].date_time;
-
-            if (dateTime.length > 10) {
-              const parsedDate = parseISO(dateTime);
+            if (item.date_time.length > 10) {
+              const parsedDate = parseISO(item.date_time);
               const time = format(parsedDate, 'HH:mm');
+
               if (time) {
                 this.availableHours.push({
-                  date_time: availability[i].date_time,
+                  date_time: item.date_time,
                   time: time,
-                  id: i + 1
+                  id: this.availableHours.length + 1
                 });
-  
-                // Get the timezone
-                let match = this.totalAvailability[i].date_time.match(/([+-]\d{2}:\d{2})$/);
+
+                const match = item.date_time.match(/([+-]\d{2}:\d{2})$/);
                 this.timezoneOffset = match ? match[1] : null;
               }
             }
           }
         }
 
-        // If we have availability on the date we assign it. If not we check the next day
-        if (this.selectedAvailability.vacancies > 0) {
-          // this.item.activity_date_time = `${this.dateValue}T${this.selectedHour}:00${this.timezoneOffset}`;
+        if (this.selectedAvailability && this.selectedAvailability.vacancies > 0) {
           this.item.activity_date_time = this.selectedAvailability.date_time;
-
           this.item.participants = [];
+
           for (let u = 0; u < this.selectedAvailability.pricing.length; u++) {
             this.item.participants.push({
               alias: this.selectedAvailability.pricing[u].participant_type_alias,
-              quantity: u == 0 ? 1 : 0
-            })
+              quantity: u === 0 ? 1 : 0
+            });
           }
+
           this.getExtras();
         } else {
-          // Check next day's availability
-          this.getAvailability(true);
+          this.isOpenNotAvailableDay = true;
+          await this.getAvailability(true);
+          return;
         }
+
         this.loaderService.stopLoading(this.loader);
       },
+
       async getExtras() {
         this.extras = await this.apiService.getOptionExtras(this.item.product_id, this.item.product_option_id, format(this.item.activity_date_time, 'yyyy-MM-dd'));
-        console.log('get extras', this.extras);
       },
       hourSelect(date_time: string) {
         for (let i = 0; i < this.totalAvailability.length; i++) {
@@ -457,7 +563,6 @@
         for (let u = 0; u < this.selectedAvailability.pricing.length; u++) {
           this.item.participants.push({
             alias: this.selectedAvailability.pricing[u].participant_type_alias,
-            // quantity: u == 0 ? 1 : 0
             quantity: this.minOrder(this.selectedAvailability.pricing[u].participant_type_alias)
           })
         }
@@ -472,9 +577,6 @@
 
         return `${year}-${month}-${day}`;
       },
-      // calculatePrice() {
-
-      // },
       async submitForm() {
         this.loader = await this.loaderService.startLoader();
         const newBookingRequest = {
@@ -486,41 +588,44 @@
         let newBookingResponse = await this.apiService.startNewBooking(newBookingRequest);
         const booking_code = newBookingResponse.code as string;
         const secret_code = newBookingResponse.secret_code as string;
-        // const booking_code = "8E35.VQ1HWY3578";
         // const secret_code = "f0283a3a8b6adf16ea6f1e98df6e638d";
+        // const booking_code = "8E35.MA47IQGVWL";
 
         // 2. Encode digest
         const digest = this.$CryptoJS.SHA1(booking_code + '_' + secret_code).toString(this.$CryptoJS.enc.Base64);
+        // const digest = 'W9RH3QFQYohnXYjusAZ0wZUwlQA='
 
         // 3. Add items
         let participants = this.item.participants.filter(participant => participant.quantity !== 0);
+        let contactData = this.item.contact_data[0].email === '' ? [{"email": this.dummyEmail}] : this.item.contact_data;
+        // Because vue is creating 'proxy object', api throughs error, so we re-convert in regular array to fix it
+        let participantsFixedProxy = JSON.parse(JSON.stringify(participants));
+        let contactDataFixedProxy = JSON.parse(JSON.stringify(contactData));
 
-        console.log('booking_code', booking_code);
-        console.log('digest', digest);
         const addItemsRequest = {
           "booking_code": booking_code,
           "digest": digest,
           "product_id": this.item.product_id,
           "product_option_id": this.item.product_option_id,
           "activity_date_time": this.item.activity_date_time,
-          "participants": participants,
-          "contact_data": this.item.contact_data
-        }
+          "participants": participantsFixedProxy,
+          "contact_data": contactDataFixedProxy
+        };
         console.log('addItemsRequest', addItemsRequest);
         const addItems = await this.apiService.addItems(addItemsRequest);
         console.log('addItems', addItems);
 
         // 4. Add extras
-        if (this.extras.length > 0) {
+        if (this.selectedExtra.extra_alias && this.selectedExtra.quantity > 0) {
           const addExtrasRequest = {
             "booking_code": booking_code,
             "digest": digest,
             "product_id": this.item.product_id,
             "product_option_id": this.item.product_option_id,
             "activity_date_time": this.item.activity_date_time,
-            "extra_alias": this.extras.alias,
-            "quantity": this.extras.quantity,
-            "answer": null
+            "extra_alias": this.selectedExtra.extra_alias,
+            "quantity": this.selectedExtra.quantity,
+            "answer": this.selectedExtra.answer
           }
           console.log('addExtrasRequest', addExtrasRequest);
           const addExtras = await this.apiService.addExtras(addExtrasRequest);
@@ -534,7 +639,7 @@
           "channel_booking_code": null,
           "channel_final_price": this.finalPrice,
           "channel_extra_info": null,
-          "schedule_booking_emails": false
+          "schedule_booking_emails": this.item.contact_data[0].email === this.dummyEmail ? false : true
         }
         console.log('completeBookingRequest', completeBookingRequest);
         const completeBooking = await this.apiService.completeBooking(completeBookingRequest);

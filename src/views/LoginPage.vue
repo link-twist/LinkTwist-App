@@ -12,23 +12,26 @@
 							<img src="../assets/logoSmallYellowBlack.png" alt="">
 						</div>
 						<ion-input
-							type="email"
+							type="text"
 							class="login-input"
-							label="Email"
-							label-placement="floating"
+							label="Domain"
+							label-placement="stacked"
 							fill="outline"
 							mode="md"
-							error-text="Invalid email"
-							@ionInput="validate"
-							@ionBlur="markTouched"
-							value=" "
+							v-model="credentials.domain"
 						></ion-input>
-						<ion-input class="login-input" label="Password" label-placement="floating" fill="outline" mode="md">
+						<ion-input
+							type="text"
+							class="login-input"
+							label="Username"
+							label-placement="stacked"
+							fill="outline"
+							mode="md"
+							v-model="credentials.username"
+						></ion-input>
+						<ion-input type="password" class="login-input" label="Password" label-placement="stacked" fill="outline" mode="md" v-model="credentials.password">
 							<ion-input-password-toggle slot="end"></ion-input-password-toggle>
 						</ion-input>
-						<!-- <ion-input class="login-input" type="password" label="Password" label-placement="floating" value="" fill="outline" mode="ios">
-							<ion-input-password-toggle slot="end"></ion-input-password-toggle>
-						</ion-input> -->
 						<ion-button expand="block" @click="login" mode="ios" color=dark>Login</ion-button>
 					</div>
 				</div>
@@ -40,52 +43,71 @@
 <script lang="ts">
 	import { ref, onMounted } from 'vue';
 	import router from '@/router';
+	import { AuthService } from '@/services/authService';
 	import { IonItem, IonLabel, IonText, IonInput, IonCard, IonCardContent, IonCardTitle, IonButton, IonButtons, IonContent, IonPage, IonIcon, IonAlert, IonInputPasswordToggle } from '@ionic/vue';
 	import { apiService } from '@/services/apiService';
-	import {
-		search, addCircleOutline
-	} from 'ionicons/icons';
+	import { useProductStore } from '@/stores/useProductStore';
 	import { defineComponent } from 'vue';
+  import { onIonViewWillEnter } from '@ionic/vue';
+  import { loaderService } from '@/services/loadingService';
 
 	export default defineComponent({
 		name: "LoginPage",
 		components: { IonItem, IonLabel, IonText, IonInput, IonCard, IonCardContent, IonCardTitle, IonButton, IonButtons, IonContent, IonPage, IonIcon, IonAlert, IonInputPasswordToggle },
 		setup() {
-			// let bookings = apiService.getBookings();
-			return { apiService };
-		},
-		data(){
-			return{
-			}
+      const credentials = ref([]);
+
+			onIonViewWillEnter(() => {
+				credentials.value = {
+					username: "",
+					domain: "",
+					password: ""
+				}
+      });
+			return { apiService, AuthService, credentials, loaderService };
 		},
 		methods: {
 			async login() {
-				// console.log('test');
-				router.push({ path: '/BookingsList' })
-				// let response = await this.apiService.testCall();
-				// console.log(response);
-				
+				let loader = await this.loaderService.startLoader();
+				try {
+					const credentials = {
+						username: this.credentials.username.trim(),
+						domain: this.credentials.domain,
+						password: this.credentials.password
+					};
+
+					if (!credentials.username || !credentials.password || !credentials.domain) {
+						alert('Please enter username, domain and password.');
+						return;
+					}
+
+					const credentialsFixedProxy = JSON.parse(JSON.stringify(credentials));
+					const response = await this.apiService.login(credentialsFixedProxy);
+
+					if (response && response.data.token) {
+						await this.AuthService.setApiURL(credentials.domain.trim());
+						await this.AuthService.setToken(response.data.token);
+						const user = await this.AuthService.getUser();
+
+						const productStore = useProductStore();
+						productStore.setUserFromToken(user);
+						await productStore.loadProducts();
+						await productStore.loadOptions();
+
+						router.push({ path: '/BookingsList' });
+					} else if (response && response.status === 404) {
+						alert('Login failed. Invalid domain.');
+					}
+					else {
+						alert('Login failed. Invalid credentials.');
+					}
+				} catch (error) {
+					console.error('Login error:', error);
+					alert('An error occurred during login. Please try again.');
+				}
+
+        this.loaderService.stopLoading(loader);
 			},
-      validateEmail(email: string) {
-        return email.match(
-          /^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-        );
-      },
-      validate(event: { target: { value: any; }; }) {
-        const value = event.target.value;
-
-        this.$refs.input.$el.classList.remove('ion-valid');
-        this.$refs.input.$el.classList.remove('ion-invalid');
-
-        if (value === '') return;
-
-        this.validateEmail(value)
-          ? this.$refs.input.$el.classList.add('ion-valid')
-          : this.$refs.input.$el.classList.add('ion-invalid');
-      },
-      markTouched() {
-        this.$refs.input.$el.classList.add('ion-touched');
-      },
 		}
 	});
 </script>

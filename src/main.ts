@@ -1,8 +1,5 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia';
-// import { Capacitor } from '@capacitor/core';
-// import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
-// import { JeepSqlite } from 'jeep-sqlite/dist/components/jeep-sqlite';
 import VueCryptojs from 'vue-cryptojs'
 import App from './App.vue'
 import router from './router';
@@ -40,7 +37,6 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import './theme/global.css';
 
-// customElements.define('jeep-sqlite', JeepSqlite);
 
 const pinia = createPinia();
 const app = createApp(App)

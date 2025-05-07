@@ -2,8 +2,9 @@
 <resources>
     <style name="Theme.LinkTwist.MySplash" parent="Theme.SplashScreen">
         <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="windowSplashScreenBackground">@color/LinkTwistYellow</item>
-        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.LightStatusBar</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/app_logo</item>
     </style>
 </resources>

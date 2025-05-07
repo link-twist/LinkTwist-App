@@ -58,12 +58,17 @@ ion-item.input-with-icon::part(native) {
     height: 100%;
     border-radius: 14px;
 }
+
+ion-item:last-child {
+    --border-width: 0 0 0 0 !important;
+    --border-color: #ffffff !important
+}
  
 #container {
     position: relative;
 }
   
-#container strong {
+#container h2 {
     font-size: 20px;
     line-height: 26px;
 }
@@ -126,4 +131,12 @@ ion-loading.loader-style .loading-wrapper {
     border-radius: 50%;
     -webkit-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+ion-chip.time-chip {
+    border-radius: 6px;
+    margin: 5px;
+    --background: #00213f;
+    --color: #adefd1;
+    font-weight: 700;
 }
