@@ -8,21 +8,10 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     StatusBar: {
-      overlaysWebView: true,
-      style: "LIGHT"
+      overlaysWebView: false,
+      style: "LIGHT",
+      backgroundColor: "#ffffff",
     },
-    // SplashScreen: {
-    //   launchShowDuration: 3000,
-    //   launchAutoHide: false,
-    //   backgroundColor: "#ffffffff",
-    //   androidSplashResourceName: "splash",
-    //   androidScaleType: "CENTER_CROP",
-    //   showSpinner: false,
-    //   splashFullScreen: true,
-    //   splashImmersive: true,
-    //   layoutName: "launch_screen",
-    //   useDialog: true,
-    // },
     CapacitorHttp: {
       enabled: true,
     },

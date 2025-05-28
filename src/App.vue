@@ -8,7 +8,7 @@
             <!-- <ion-note>hi@ionicframework.com</ion-note> -->
 
             <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
-              <ion-item @click="urlTest()" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated">
+              <ion-item router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated">
                 <ion-icon aria-hidden="true" slot="start" :ios="p.iosIcon" :md="p.mdIcon"></ion-icon>
                 <ion-label>{{ p.title }}</ion-label>
               </ion-item>
@@ -42,10 +42,13 @@ import { ref } from 'vue';
 import {
   addCircleOutline,
   calendarOutline,
+  checkmarkOutline,
+  bagCheckOutline,
   logOutOutline
 } from 'ionicons/icons';
 import { useProductStore } from '@/stores/useProductStore';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { AuthService } from '@/services/authService';
 import { useBackButton } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -63,6 +66,18 @@ const appPages = [
     url: '/NewBookingSidebar',
     iosIcon: addCircleOutline,
     mdIcon: addCircleOutline,
+  },
+  {
+    title: 'Check In',
+    url: '/CheckIn',
+    iosIcon: checkmarkOutline,
+    mdIcon: checkmarkOutline,
+  },
+  {
+    title: 'Products',
+    url: '/ProductsAvailability',
+    iosIcon: bagCheckOutline,
+    mdIcon: bagCheckOutline,
   },
   {
     title: 'Logout',
@@ -85,12 +100,9 @@ const showMenu = computed(() => {
   }
 });
 
-const urlTest = () => {
-  console.log(route.path)
-}
-
 onMounted(async () => {
   await StatusBar.setStyle({ style: Style.Light });
+  await StatusBar.setBackgroundColor({ color: '#ffffff' });
 
   isLoggedIn.value = await AuthService.isLoggedIn();
 
@@ -107,15 +119,10 @@ onMounted(async () => {
       console.error("Error initializing the app:", error);
     }
   }
-
-  useBackButton(10, () => {
-    router.go(-1); // Correct: go back in history
-  });
   
   useBackButton(-1, () => {
     const currentPath = route.path;
 
-    console.log(currentPath);
     if (currentPath === '/login' || currentPath === '/BookingsList') {
       CapacitorApp.exitApp();
     }

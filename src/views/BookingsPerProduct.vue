@@ -1,9 +1,9 @@
 <template>
-	<ion-page>
+	<ion-page mode="ios">
 		<ion-header :translucent="true">
       <ion-toolbar mode="ios">
 				<ion-buttons slot="start">
-					<ion-back-button text="Cancel"></ion-back-button>
+					<ion-back-button text="Back" color="dark"></ion-back-button>
 				</ion-buttons>
         <ion-title><h2>Bookings</h2></ion-title>
         <ion-buttons slot="end">
@@ -15,28 +15,25 @@
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Bookings for</ion-title>
+          <ion-title size="large">Bookings</ion-title>
         </ion-toolbar>
       </ion-header>
 
       <div id="container">
-				<h1 class="title">{{ selectedProductOption.product }}</h1>
-				<h2 class="title">{{ selectedProductOption.option }}</h2>
-				<h2 class="subtitle">{{ formatedDate }}</h2>
+				<h3 class="title">{{ selectedProductOption.product }} - {{ selectedProductOption.option }}</h3>
+				<p class="subtitle">{{ formatedDate }} &bull; {{ bookingsCount }} Bookings</p>
 
-        <ion-card>
+        <ion-card v-for="(booking, index) in bookings" :key="index">
           <ion-card-content>
-						<ion-list>
-							<ion-item v-for="(booking, index) in bookings" :key="index">
-								<ion-label>
-									<h2><strong>{{ booking.code }}</strong></h2>
-									<h2 :style="{ color: booking.booking_status === 'Cancelled' ? '#FF0000' : '#FDDA0D' }"><strong>{{ booking.booking_status }} - Payment status</strong></h2>
-									<h2 v-if="booking.contact_data.name || booking.contact_data.surname">{{ booking.contact_data.name }} {{ booking.contact_data.surname }}</h2>
-									<h2 v-else>{{ booking.contact_data.email }}</h2>
-									<h2 v-for="(count, alias) in booking.participants" :key="alias" class="gray-font-1">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</h2>
-								</ion-label>
-							</ion-item>
-						</ion-list>
+						<p style="margin-bottom: 15px;"><b>{{ booking.code }}</b></p>
+						<p>Booking status: <ion-text :color="bookingStatusColor(booking.booking_status)"><b>{{ booking.booking_status }}</b></ion-text></p>
+						<p style="margin-bottom: 15px;">Payment status: <ion-text :color="paymentColor(booking.payment_status)"><b>{{ booking.payment_status }}</b></ion-text></p>
+						<p>
+							{{ booking.contact_data.name }} {{ booking.contact_data.surname }}
+							<span v-if="(booking.contact_data.name !== '' || booking.contact_data.surname !== '') && booking.contact_data.email !== ''">&bull;</span>
+							{{ booking.contact_data.email }}
+						</p>
+						<p v-for="(count, alias) in booking.participants" :key="alias" class="gray-font-1">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</p>
 					</ion-card-content>
 				</ion-card>
 			</div>
@@ -61,20 +58,66 @@
       IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonAlert, IonChip, IonRefresher, IonRefresherContent, IonBackButton
     },
 		setup() {
-      const productStore = useProductStore();
-			const date = parseISO(productStore.selectedProductOption.activity_date_time);
+			const productStore = useProductStore();
 			let formatedDate = '';
-			if (productStore.selectedProductOption.activity_date_time.length > 10) {
-				formatedDate = format(date, "HH:mm, dd MMMM yyyy");
-			} else {
-				formatedDate = format(date, "dd MMMM yyyy");
+			let date;
+
+			if (
+				productStore.selectedProductOption &&
+				productStore.selectedProductOption.activity_date_time
+			) {
+				date = parseISO(productStore.selectedProductOption.activity_date_time);
+				if (productStore.selectedProductOption.activity_date_time.length > 10) {
+					formatedDate = format(date, "HH:mm, dd MMMM yyyy");
+				} else {
+					formatedDate = format(date, "dd MMMM yyyy");
+				}
 			}
+			const bookings = productStore.bookings || [];
+			const bookingsCount = bookings.length;
 
 			return {
-				bookings: productStore.bookings as any[],
-				selectedProductOption: productStore.selectedProductOption as any[],
+				bookings,
+				bookingsCount,
+				selectedProductOption: productStore.selectedProductOption || {},
 				formatedDate,
 				productStore
+			}
+		},
+		methods: {
+      paymentColor(payment_status: any) {
+        switch (payment_status) {
+          case 'Paid':
+            return 'success'; // green
+          case 'Paid to Third Party':
+            return 'success';
+          case 'Free of Charge':
+            return 'success';
+          case 'Partially Paid':
+            return 'warning'; // yellow
+          case 'Amount withheld':
+            return 'warning'; // yellow
+          case 'Not Paid':
+            return 'danger'; // red
+          default:
+            return 'medium'; // gray
+        }
+      },
+			bookingStatusColor(booking_status: any) {
+				switch (booking_status) {
+					case 'Completed':
+						return 'success'; // green
+					case 'Pending':
+						return 'warning';
+					case 'Unconfirmed':
+						return 'warning'; // yellow
+					case 'Deprecated':
+						return 'warning'; // yellow
+					case 'Cancelled':
+						return 'danger'; // red
+					default:
+						return 'medium'; // gray
+				}
 			}
 		},
 		mounted() {
@@ -84,19 +127,27 @@
 </script>
 
 <style scoped>
-h1.title, h2.title {
-	margin-left: 16px;
-	font-weight: 700;
-}
+	p {
+		font-size: 18px !important;
+		line-height: 24px !important;
+	}
 
-h2.title {
-	margin-top: 0;
-	font-size: 24px !important;
-}
+	ion-card {
+		background-color: var(--ion-color-light, #d9d9d9);
+		border-color: var(--ion-background-color-step-400, #808080);
+	}
 
-h2.subtitle {
-	margin-top: 0;
-	margin-left: 16px;
-	color: var(--ion-text-color-step-500);
-}
+	.title {
+		margin-left: 16px;
+		font-weight: 700;
+		margin-top: 0;
+		margin-bottom: 5px;
+		font-size: 20px !important;
+	}
+
+	p.subtitle {
+		margin-top: 0 !important;
+		margin-left: 16px !important;
+		color: var(--ion-text-color-step-500);
+	}
 </style>

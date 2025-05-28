@@ -1,7 +1,7 @@
 <template>
-  <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar mode="ios">
+  <ion-page mode="ios">
+    <ion-header :translucent="true" ref="mainHeaderRef">
+      <ion-toolbar>
         <ion-buttons :router-link="'/NewBooking'" slot="start">
           <ion-icon class="addButton" :icon="addCircleOutline"></ion-icon>
         </ion-buttons>
@@ -22,7 +22,7 @@
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
-      <div id="container"> 
+      <div id="container">
         <ion-grid>
           <ion-row>
             <ion-col> 
@@ -35,68 +35,80 @@
                   :icon="search"
                 ></ion-input>
               </ion-item> -->
-              <ion-button id="open-date-modal" color="dark">
-                <ion-icon class="icon-text" :icon="calendarOutline"></ion-icon>{{ selectedDateFormatted(selectedDate) }}
+              <ion-button id="open-date-modal" color="dark" mode="md" fill="outline">
+                <ion-icon class="icon-text" :icon="calendarOutline"></ion-icon>{{ selectedDateFormatted() }}
               </ion-button>
             </ion-col>
             <ion-col size="auto">
-              <ion-button v-if="listMode === 'byBooking'" color="dark" @click="switchViewMode()">List by Product</ion-button>
-              <ion-button v-else color="dark" @click="switchViewMode()">List by Booking</ion-button>
+              <ion-button v-if="listMode === 'byBooking'" color="dark" @click="switchViewMode()" mode="md" fill="outline">List by Product</ion-button>
+              <ion-button v-else color="dark" @click="switchViewMode()" mode="md" fill="outline">List by Booking</ion-button>
             </ion-col>
           </ion-row>
         </ion-grid>
-        <ion-card>
-          <ion-card-content>
-            <ion-list v-if="listMode === 'byBooking'">
-              <ion-item v-for="(booking, index) in getBookingItems()" :key="index">
-                <ion-label>
-                  <ion-chip class="time-chip" v-if="booking.time !== ''">{{ booking.time }}</ion-chip>
-                  
-                  <h2 class="gray-font-1">{{ booking.code }}</h2>
-                  <h2 v-if="booking.booking_status !== 'Completed'" :style="{ color: booking.booking_status === 'Cancelled' ? '#FF0000' : '#FDDA0D' }"><strong>{{ booking.booking_status }}</strong></h2>
-                  <h2><strong>{{ booking.product }}</strong></h2>
-                  <h2><strong>{{ booking.option }}</strong></h2>
-                  <h2 class="gray-font-1" v-for="(count, alias) in booking.participants" :key="alias">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</h2>
-                  <h2 v-for="(count, alias) in booking.extras" :key="alias">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</h2>
-                </ion-label>
+        <div class="bookings-grid">
+          <div class="horizontal-scroll-snap">
+            <div class="snap-col" v-for="(date, index) in setDatesRange()" :key="index">
+              <ion-card-header class="date-header" ref="date">
+                <p>{{ dateFormated(date) }}</p>
+              </ion-card-header>
+              <div v-for="(time, index) in setTimeSlots(date)" :key="index">
+                <p v-if="time !== '00:00'" class="time-header" ref="time">{{ time }}</p>
+                <p v-else class="time-header" ref="time">All day</p>
+                <ion-list v-if="listMode === 'byBooking'">
+                  <ion-item v-for="(booking, index) in getBookingItems(date, time)" :key="index" @click="showBookingDetails(booking)">
+                    <ion-label>
+                      
+                      <h2 class="gray-font-1">{{ booking.code }}</h2>
+                      <h2 v-if="booking.booking_status !== 'Completed'" :style="{ color: booking.booking_status === 'Cancelled' ? '#FF0000' : '#FDDA0D' }"><strong>{{ booking.booking_status }}</strong></h2>
+                      <h2><strong>{{ booking.product }}</strong></h2>
+                      <h2><strong>{{ booking.option }}</strong></h2>
+                      <p class="gray-font-1" v-for="(count, alias) in booking.participants" :key="alias">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</p>
+                      <p v-for="(count, alias) in booking.extras" :key="alias">{{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}</p>
+                    </ion-label>
+    
+                    <ion-chip class="time-chip top-right" :color="paymentColor(booking.payment_status)">{{ booking.payment_status }}</ion-chip>
+                  </ion-item>
+                </ion-list>
 
-                <ion-chip class="time-chip" color="danger">NOT PAID</ion-chip>
-              </ion-item>
-              <ion-item v-if="bookings.length === 0">
-                <ion-text class="text-center">
-                  <h2>There are no bookings for this day!</h2>
-                </ion-text>
-              </ion-item>
-            </ion-list>
-            <ion-list v-if="listMode === 'byProduct'">
-              <ion-item v-for="(product, index) in getProductOptionSumByTime()" :key="index" @click="showBookingsPerProduct(product)">
-                <ion-label>
-                  <ion-chip class="time-chip" v-if="product.time !== ''">{{ product.time }}</ion-chip>
-                  <h2><strong>{{ product.product }}</strong></h2>
-                  <h2><strong>{{ product.option }}</strong></h2>
-                  <h2 v-for="(count, alias) in product.participants" :key="alias" class="gray-font-1">
-                    {{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}
-                  </h2>
-                </ion-label>
+                <ion-list v-if="listMode === 'byProduct'">
+                  <ion-item v-for="(product, index) in getProductOptionSumByTime(date, time)" :key="index" @click="showBookingsPerProduct(product, date, time)">
+                    <ion-label>
+                      <h2><strong>{{ product.product }}</strong></h2>
+                      <h2><strong>{{ product.option }}</strong></h2>
+                      <p v-for="(count, alias) in product.participants" :key="alias" class="gray-font-1">
+                        {{ alias.toString()[0].toUpperCase() + alias.toString().slice(1) }} x {{ count }}
+                      </p>
+                    </ion-label>
 
-                <ion-button fill="clear" size="large" slot="end" @click.stop="newBookingByProduct(product)">
-                  <ion-icon :icon="addCircleOutline"></ion-icon>
-                </ion-button>
-              </ion-item>
-
-              <ion-item v-if="bookings.length === 0">
-                <ion-text class="text-center">
-                  <h2>There are no bookings for this day!</h2>
-                </ion-text>
-              </ion-item>
-            </ion-list>
-
-          </ion-card-content>
-        </ion-card>
+                    <ion-button ref="test" fill="clear" size="large" slot="end" @click.stop="newBookingByProduct(product)">
+                      <ion-icon :icon="addCircleOutline"></ion-icon>
+                    </ion-button>
+                  </ion-item>
+                </ion-list>
+              </div>
+              <div v-if="setTimeSlots(date).length == 0 && initialized" class="ion-text-center">
+                <p class="time-header" ref="time">All day</p>
+                <h2>No bookings</h2>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <ion-modal id="date-modal" ref="modal" trigger="open-date-modal">
         <div class="wrapper">
-          <ion-datetime v-model="selectedDate" @ionChange="getBookings()" presentation="date" mode="ios"></ion-datetime>
+          <CustomDateRange
+            id="datetime-filter"
+            min="2020-01-01T00:00:00"
+            :start="startDatePicker"
+            :end="endDatePicker"
+            @update:start="(d) => (startDatePicker = d)"
+            @update:end="(d) => (endDatePicker = d)"
+          />
+          <ion-toolbar>
+            <ion-buttons>
+              <ion-button fill="clear" @click="getBookings()">OK</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
         </div>
       </ion-modal>
     </ion-content>
@@ -112,27 +124,28 @@
   import { loaderService } from '@/services/loadingService';
   import { search, addCircleOutline, calendarOutline, chevronForwardCircleOutline } from 'ionicons/icons';
   import { defineComponent } from 'vue';
-  import { format } from "date-fns";
+  import { format, parseISO, isEqual, eachDayOfInterval } from "date-fns";
   import { onIonViewWillEnter } from '@ionic/vue';
+  import CustomDateRange from '@/components/CustomDateRange.vue';
 
   export default defineComponent({
     name: "BookingsList",
-    components: { 
-      IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, 
+    components: {
+      CustomDateRange, IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, 
       IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, 
       IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, 
       IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonAlert, IonChip, IonRefresher, IonRefresherContent, 
     },
     setup() {
-      const loader = ref(null);
-      const selectedDate = ref(format(new Date(), 'yyyy-MM-dd'));
-      const dateFrom = ref('');
-      const dateTo = ref('');
-      const bookings = ref([]);
+      const loader = ref<HTMLIonLoadingElement>();
+      const initialized = ref<Boolean>(false);
+      const startDatePicker = ref<string>(format(new Date(), 'yyyy-MM-dd'));
+      const endDatePicker = ref<string>(format(new Date(), 'yyyy-MM-dd'));
+      const bookings = ref<any[]>([]);
 
       const defaultLoader = ref(true);
 
-      const handleRefresh = async (event: CustomEvent) => {
+      const handleRefresh = async (event: CustomEvent|any) => {
         setTimeout(async () => {
           defaultLoader.value = false;
           await getBookings();
@@ -141,16 +154,20 @@
         }, 500);
       };
 
+      const datesRange = eachDayOfInterval({
+        start: startDatePicker.value,
+        end: endDatePicker.value
+      }).map(date => format(date, 'yyyy-MM-dd'))
+
       const getBookings = async () => {
         if (defaultLoader.value == true) {
           loader.value = await loaderService.startLoader();
         }
 
-        const dateStr = selectedDate.value.split('T')[0];
-        dateFrom.value = `${dateStr} 00:00:00`;
-        dateTo.value = `${dateStr} 23:59:59`;
+        const dateFrom = `${startDatePicker.value} 00:00:00`;
+        const dateTo = `${endDatePicker.value} 23:59:59`;
 
-        let result = await apiService.getBookings(dateFrom.value, dateTo.value);
+        let result = await apiService.getBookings(dateFrom, dateTo);
         bookings.value = (result || []).filter(
           booking => !['pending', 'deprecated'].includes(booking.booking_status)
         );
@@ -158,6 +175,7 @@
         console.log('Filtered bookings:', bookings.value);
 
         loaderService.stopLoading(loader.value);
+        initialized.value = true;
       };
 
       onIonViewWillEnter(() => {
@@ -170,9 +188,12 @@
         products: productStore.products as any[],
         options: productStore.options as any[],
         bookings,
-        selectedDate,
+        startDatePicker,
+        endDatePicker,
+        datesRange,
         apiService,
         loaderService,
+        initialized,
         search,
         addCircleOutline,
         calendarOutline,
@@ -185,6 +206,7 @@
       return {
         loader: null as any,
         listMode: 'byBooking',
+        timeSlots: [] as any[],
         productMap: {} as Record<number, string>,
         productOptionsMap: {} as Record<string, string>,
         extras: [] as any[],
@@ -197,8 +219,44 @@
     async mounted() {
       await this.loadProductsAndOptions();
       await this.getExtras();
+
+      // this.stickyTableHeader();
     },
     methods: {
+      stickyTableHeader() {
+        const headerComponent = this.$refs.mainHeaderRef;
+        const headerEl = (headerComponent as any)?.$el || headerComponent;
+        console.log(headerEl);
+ 
+        if (headerEl instanceof HTMLElement) {
+          const height = headerEl.offsetHeight;
+          document.documentElement.style.setProperty('--date-header-top', `${height}px`);
+          console.log(height);
+        }
+      },
+      setTimeSlots(date: string) {
+        const timesSet = new Set<string>();
+
+        this.bookings.forEach((booking: any) => {
+          booking.items.forEach((item: any) => {
+            const itemDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd')
+            if (itemDate == date) {
+              const time = format(parseISO(item.activity_date_time), 'HH:mm');
+              timesSet.add(time);
+            }
+          }) 
+        });
+
+        return Array.from(timesSet).sort();
+      },
+      setDatesRange() {
+        this.datesRange = eachDayOfInterval({
+          start: this.startDatePicker,
+          end: this.endDatePicker
+        }).map(date => format(date, 'yyyy-MM-dd'))
+
+        return this.datesRange;
+      },
       switchViewMode() {
         if (this.listMode === 'byBooking') {
           this.listMode = 'byProduct'
@@ -208,8 +266,8 @@
       },
       async getBookings() {
         this.loader = await this.loaderService.startLoader();
-        this.dateFrom = `${this.selectedDate.split('T')[0]} 00:00:00`;
-        this.dateTo = `${this.selectedDate.split('T')[0]} 23:59:59`;
+        this.dateFrom = `${this.startDatePicker} 00:00:00`;
+        this.dateTo = `${this.endDatePicker} 23:59:59`;
 
         const modal = this.$refs.modal as InstanceType<typeof IonModal>;
         modal.$el.dismiss();
@@ -222,13 +280,13 @@
 
         console.log('Filtered bookings:', this.bookings);
 
-        await this.getExtras();
-
         this.loaderService.stopLoading(this.loader);
+        
+        await this.getExtras();
       },
       async getExtras() {
         this.extras = [] as any[];
-        const date = this.dateFrom === '' ? format(this.selectedDate, 'yyyy-MM-dd') : this.dateFrom;
+        const date = this.dateFrom === '' ? this.startDatePicker : this.dateFrom;
 
         for (let i = 0; i < this.options.length; i++) {
           let extra = await this.apiService.getOptionExtras(this.options[i].product_id, this.options[i].id, date);
@@ -253,35 +311,42 @@
           this.options.map(o => [`${o.product_id}-${o.id}`, o.title])
         );
       },
-      getBookingItems() {
+      getBookingItems(date: string, time: string) {
         const groups: Record<string, any> = {};
 
-        this.bookings.forEach((booking) => {
+        this.bookings.forEach((booking: any) => {
           booking.items.forEach((item: {
             product_id: number;
             product_option_id: number;
             activity_date_time: string;
             participant_type_alias: string;
           }) => {
-            const key = `${booking.code}-${item.product_option_id}-${item.activity_date_time}`;
-
-            if (!groups[key]) {
-              groups[key] = {
-                code: booking.code,
-                booking_status: booking.booking_status.charAt(0).toUpperCase() + booking.booking_status.slice(1),
-                product: this.productMap[item.product_id] || "Unknown Product",
-                option: this.productOptionsMap[`${item.product_id}-${item.product_option_id}`] || "Unknown Option",
-                time: item.activity_date_time.length > 10 ? format(item.activity_date_time, 'HH:mm') : '',
-                participants: {},
-                extras: {}
-              };
+            const itemActivityDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd');
+            const itemActivityTime = format(parseISO(item.activity_date_time), 'HH:mm');
+            if (itemActivityDate == date && itemActivityTime == time) {
+              const key = `${booking.code}-${item.product_option_id}-${item.activity_date_time}`;
+  
+              if (!groups[key]) {
+                groups[key] = {
+                  code: booking.code,
+                  booking_status: booking.booking_status.charAt(0).toUpperCase() + booking.booking_status.slice(1),
+                  product: this.productMap[item.product_id] || "Unknown Product",
+                  option: this.productOptionsMap[`${item.product_id}-${item.product_option_id}`] || "Unknown Option",
+                  date: format(item.activity_date_time, 'dd MMMM yyyy'),
+                  time: item.activity_date_time.length > 10 ? format(item.activity_date_time, 'HH:mm') : '',
+                  activity_date_time: item.activity_date_time,
+                  participants: {},
+                  extras: {},
+                  payment_status: booking.payment_status,
+                };
+              }
+  
+              if (!groups[key].participants[item.participant_type_alias]) {
+                groups[key].participants[item.participant_type_alias] = 0;
+              }
+  
+              groups[key].participants[item.participant_type_alias]++;
             }
-
-            if (!groups[key].participants[item.participant_type_alias]) {
-              groups[key].participants[item.participant_type_alias] = 0;
-            }
-
-            groups[key].participants[item.participant_type_alias]++;
           });
 
           booking.extras.forEach((extra: {
@@ -311,35 +376,39 @@
         });
       },
 
-      getProductOptionSumByTime() {
+      getProductOptionSumByTime(date: string, time: string) {
         const groups: Record<string, any> = {};
 
-        this.bookings.forEach((booking) => {
+        this.bookings.forEach((booking: any) => {
           booking.items.forEach((item: {
             product_id: number;
             product_option_id: number;
             participant_type_alias: string;
             activity_date_time: string;
           }) => {
-            const key = `${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
+            const itemActivityDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd');
+            const itemActivityTime = format(parseISO(item.activity_date_time), 'HH:mm');
+            if (itemActivityDate == date && itemActivityTime == time) {
+              const key = `${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
 
-            if (!groups[key]) {
-              groups[key] = {
-                product: this.productMap[item.product_id] || "Unknown Product",
-                product_id: item.product_id,
-                option: this.productOptionsMap[`${item.product_id}-${item.product_option_id}`] || "Unknown Option",
-                product_option_id: item.product_option_id,
-                time: item.activity_date_time.length > 10 ? format(item.activity_date_time, 'HH:mm') : '',
-                activity_date_time: item.activity_date_time,
-                participants: {},
-              };
+              if (!groups[key]) {
+                groups[key] = {
+                  product: this.productMap[item.product_id] || "Unknown Product",
+                  product_id: item.product_id,
+                  option: this.productOptionsMap[`${item.product_id}-${item.product_option_id}`] || "Unknown Option",
+                  product_option_id: item.product_option_id,
+                  time: item.activity_date_time.length > 10 ? format(item.activity_date_time, 'HH:mm') : '',
+                  activity_date_time: item.activity_date_time,
+                  participants: {},
+                };
+              }
+
+              if (!groups[key].participants[item.participant_type_alias]) {
+                groups[key].participants[item.participant_type_alias] = 0;
+              }
+
+              groups[key].participants[item.participant_type_alias]++;
             }
-
-            if (!groups[key].participants[item.participant_type_alias]) {
-              groups[key].participants[item.participant_type_alias] = 0;
-            }
-
-            groups[key].participants[item.participant_type_alias]++;
           });
         });
 
@@ -350,32 +419,41 @@
           return (hA * 60 + mA) - (hB * 60 + mB);
         });
       },
-      newBookingByProduct(product: any) {
-        const groups = this.groupBookingsPerProduct(product);
+      showBookingDetails(booking: any) {
+        this.productStore.storeBooking(
+          booking,
+          this.bookings.find((p: any) => p.code === booking.code).items
+        );
 
-        this.productStore.saveBookingsByProduct(groups, product);
+        this.$router.push('/BookingDetails');
+      },
+      newBookingByProduct(product: any, date: string, time: string) {
+        const groups = this.groupBookingsPerProduct(product, date, time);
+        this.productStore.storeBookingsByProduct(groups, product);
 
         this.$router.push('/NewBooking');
       },
-      showBookingsPerProduct(product: any) {
-        const groups = this.groupBookingsPerProduct(product);
-
-        this.productStore.saveBookingsByProduct(groups, product);
+      showBookingsPerProduct(product: any, date: string, time: string) {
+        const groups = this.groupBookingsPerProduct(product, date, time);
+        this.productStore.storeBookingsByProduct(groups, product);
 
         this.$router.push('/BookingsPerProduct');
       },
-      groupBookingsPerProduct(product: any) {
+      groupBookingsPerProduct(product: any, date: string, time: string) {
         const groups: Record<string, any> = {};
 
         this.bookings.forEach((booking: any) => {
           booking.items.forEach((item: { product_id: number; product_option_id: number; activity_date_time: string; participant_type_alias: string; contact_data: any }) => {
-            if (item.product_id === product.product_id && item.product_option_id === product.product_option_id) {
+            const itemActivityDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd');
+            const itemActivityTime = format(parseISO(item.activity_date_time), 'HH:mm');
+            if (item.product_id === product.product_id && item.product_option_id === product.product_option_id && itemActivityDate == date && itemActivityTime == time) {
               const key = `${booking.code}-${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
   
               if (!groups[key]) {
                 groups[key] = {
                   code: booking.code,
                   booking_status: booking.booking_status.charAt(0).toUpperCase() + booking.booking_status.slice(1),
+                  payment_status: booking.payment_status,
                   product: this.productMap[item.product_id] || "Unknown Product",
                   option: this.productOptionsMap[`${item.product_id}-${item.product_option_id}`] || "Unknown Option",
                   time: item.activity_date_time.length > 10 ? format(item.activity_date_time, 'HH:mm') : '',
@@ -394,31 +472,47 @@
 
         return Object.values(groups);
       },
-      selectedDateFormatted(date: string) {
-        if (!date) return "";
-        
-        const options = { day: "2-digit", month: "short" };
-        return new Date(date).toLocaleDateString("en-GB", options);
+      dateFormated(date: string) {
+        const dateStr = parseISO(date);
+        return format(dateStr, 'EEEE d MMM')
       },
-      timeFormatted(datetime: string) {
-        if (!datetime) return "";
-        
-        const date = new Date(datetime);
-        return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      selectedDateFormatted() {
+        if (!this.startDatePicker || !this.endDatePicker) return '';
+  
+        const startDate = parseISO(this.startDatePicker);
+        const endDate = parseISO(this.endDatePicker);
+
+        if (isEqual(startDate, endDate)) {
+          return format(startDate, 'd MMM');
+        } else if (format(startDate, 'MM yyyy') === format(endDate, 'MM yyyy')) {
+          return `${format(startDate, 'd')}-${format(endDate, 'd MMM')}`;
+        }
+
+        return `${format(startDate, 'd MMM')} - ${format(endDate, 'd MMM')}`;
+      },
+      paymentColor(payment_status: any) {
+        switch (payment_status) {
+          case 'Paid':
+            return 'success'; // green
+          case 'Paid to Third Party':
+            return 'success';
+          case 'Free of Charge':
+            return 'success';
+          case 'Partially Paid':
+            return 'warning'; // yellow
+          case 'Amount withheld':
+            return 'warning'; // yellow
+          case 'Not Paid':
+            return 'danger'; // red
+          default:
+            return 'medium'; // gray
+        }
       }
     }
   });
 </script>
 
 <style scoped>
-#container ion-grid {
-  margin-top: 10px;
-}
-
-#container {
-  margin-bottom: 40px;
-}
-
 ion-buttons ion-icon.addButton {
   padding-inline-start: 10px;
   padding-inline-end: 10px;
@@ -439,9 +533,19 @@ ion-modal#date-modal .wrapper {
   background-color: #fff;
 }
 
-ion-label h2 {
+ion-modal#date-modal ion-button {
+  margin-left: auto;
+  margin-right: auto;
+  font-weight: 800;
+}
+
+ion-label h2 ,ion-label p {
   padding-inline-start: 5px;
   padding-inline-end: 5px;
+}
+
+ion-item {
+    --inner-padding-end:0;
 }
 
 ion-item h2 {

@@ -2,14 +2,16 @@
 	<ion-page>
 		<ion-content :fullscreen="true">
 			<div id="container">
-				<div class="backgound">
+				<div>
 					<img class="left-img" src="../assets/fingerprint.png" alt="">
 					<img class="right-img" src="../assets/fingerprint.png" alt="">
+					<img class="linktwist-img" src="../assets/logoSmallYellowBlack.png" alt="LinkTwist" />
 				</div>
 				<div style="position: relative;">
 					<div class="login">
-						<div class="icon">
-							<img src="../assets/logoSmallYellowBlack.png" alt="">
+						<div class="welcome-text">
+							<h1>Welcome</h1>
+							<p>Sign in to continue</p>
 						</div>
 						<ion-input
 							type="text"
@@ -55,7 +57,7 @@
 		name: "LoginPage",
 		components: { IonItem, IonLabel, IonText, IonInput, IonCard, IonCardContent, IonCardTitle, IonButton, IonButtons, IonContent, IonPage, IonIcon, IonAlert, IonInputPasswordToggle },
 		setup() {
-      const credentials = ref([]);
+      const credentials = ref([]) as any;
 
 			onIonViewWillEnter(() => {
 				credentials.value = {
@@ -87,6 +89,7 @@
 					if (response && response.data.token) {
 						await this.AuthService.setApiURL(credentials.domain.trim());
 						await this.AuthService.setToken(response.data.token);
+						await this.AuthService.setCredentials(credentialsFixedProxy); // Store the credentials to be able to refresh the token
 						const user = await this.AuthService.getUser();
 
 						const productStore = useProductStore();
@@ -129,8 +132,25 @@
 		left: 0%;
 	}
 
-	#container .icon {
-		padding-bottom: 80px;
+	div.welcome-text {
+		text-align: center;
+		padding-bottom: 100px;
+	}
+	div.welcome-text h1 {
+		font-weight: 900;
+	}
+	div.welcome-text p {
+		color: var(--ion-text-color-step-300);
+	}
+
+	img.linktwist-img {
+		position: fixed;
+		bottom: 2%;
+		left: 50%;
+		transform: translate(-50%);
+		width: 170px;
+		/* padding-bottom: 5px; */
+		z-index: 0;
 	}
 
 	.login {
@@ -143,7 +163,7 @@
 
 	ion-content img.left-img {
 		margin-top: 10%;
-    	max-width: 50%;
+		max-width: 50%;
 	}
 
 	ion-content img.right-img {

@@ -10,7 +10,11 @@ export const useProductStore = defineStore('productStore', {
     products: [] as any[],
     options: [] as any[],
     bookings: [] as any[],
-    selectedProductOption: [] as any[]
+    selectedProductOption: [] as any[],
+
+    // for booking details
+    booking: [] as any[],
+    items: [] as any[],
   }),
 
   actions: {
@@ -44,7 +48,12 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    saveBookingsByProduct(bookings: any, productOption: any) {
+    storeBooking(booking: any, items: any) {
+      this.booking = booking;
+      this.items = items;
+    },
+
+    storeBookingsByProduct(bookings: any, productOption: any) {
       this.bookings = bookings;
       this.selectedProductOption = productOption;
     },

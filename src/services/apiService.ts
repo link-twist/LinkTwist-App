@@ -1,5 +1,6 @@
 
 import { AuthService } from '@/services/authService';
+import ProductsAvailability from '@/views/ProductsAvailability.vue';
 import { CapacitorHttp } from '@capacitor/core';
 
 const headers = {
@@ -20,6 +21,38 @@ export const apiService = {
         data: request
       });
       return response || [];
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  },
+  async checkIn(request: any) {
+    const headers = {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + await AuthService.getToken(),
+    }
+
+    try {
+      const response = await CapacitorHttp.request({
+        url: `${await AuthService.getApiURL()}/offline/bookings/items/checkin`,
+        method: 'PATCH',
+        headers: headers,
+        data: request
+      });
+      return response || [];
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  },
+  async getBooking(booking_code: string) {
+    console.log('getBooking', booking_code);
+    try {
+      const response = await CapacitorHttp.request({
+        url: `${await AuthService.getApiURL()}/bookings/${booking_code}`,
+        method: 'GET',
+        headers: headers,
+      })
+      return response.data || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -72,14 +105,27 @@ export const apiService = {
       console.error('Fetch error:', error);
     }
   },
-  async getProductOptionAvailability(product_id: number, product_option_id: number, dateFrom: string, dateTo: string) {
+  async getProductOptionAvailability(product_id: number, product_option_id: number, dateFrom: string, dateTo: string, pricing: boolean) {
     try {
       const response = await CapacitorHttp.request({
-        url: `${await AuthService.getApiURL()}/products/${product_id}/options/${product_option_id}/availability?from=${encodeURIComponent(dateFrom)}&to=${encodeURIComponent(dateTo)}&pricing=true`,
+        url: `${await AuthService.getApiURL()}/products/${product_id}/options/${product_option_id}/availability?from=${encodeURIComponent(dateFrom)}&to=${encodeURIComponent(dateTo)}&pricing=${pricing}`,
         method: 'GET',
         headers: headers,
       })
       return response.data || [];
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  },
+  async stopStartSales(request: any) {
+    try {
+      const response = await CapacitorHttp.request({
+        url: `${await AuthService.getApiURL()}/products/availability`,
+        method: 'PATCH',
+        headers: headers,
+        data: request,
+      })
+      return response || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -97,7 +143,6 @@ export const apiService = {
     }
   },
   async getOptionExtras(product_id: number, product_option_id: number, date_time: string) {
-    // console.log(`${await AuthService.getApiURL()}/products/${product_id}/options/${product_option_id}/extras?datetime=${date_time}`);
     try {
       const response = await CapacitorHttp.request({
         url: `${await AuthService.getApiURL()}/products/${product_id}/options/${product_option_id}/extras?datetime=${date_time}`,
@@ -164,6 +209,19 @@ export const apiService = {
     try {
       const response = await CapacitorHttp.request({
         url: `${await AuthService.getApiURL()}/bookings/complete`,
+        method: 'POST',
+        headers: headers,
+        data: request
+      })
+      return response.data || [];
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  },
+  async cancelBooking(request: any) {
+    try {
+      const response = await CapacitorHttp.request({
+        url: `${await AuthService.getApiURL()}/bookings/cancel`,
         method: 'POST',
         headers: headers,
         data: request

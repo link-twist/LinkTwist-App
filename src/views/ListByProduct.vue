@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page mode="ios">
     <ion-header :translucent="true">
       <ion-toolbar mode="ios">
         <ion-title>Bookings</ion-title>

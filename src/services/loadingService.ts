@@ -14,7 +14,7 @@ export const loaderService = {
 
   async stopLoading(loader: any) {
     if (loader) {
-      await new Promise(f => setTimeout(f, 50));
+      await new Promise(f => setTimeout(f, 10));
       loader.dismiss();
     }
   }

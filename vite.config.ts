@@ -29,5 +29,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom'
-  }
+  },
+  esbuild: {
+    supported: {
+      'top-level-await': true
+    },
+  },
 })

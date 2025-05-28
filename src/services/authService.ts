@@ -15,6 +15,12 @@ export const AuthService = {
     const apiURL = `https://${domain}.api.link-twist.com`;
     await SecureStoragePlugin.set({ key: 'apiURL', value: apiURL });
   },
+
+	async setCredentials(credentials: {domain: string, username: string, password: string}) {
+		await SecureStoragePlugin.set({ key: 'domain', value: credentials.domain });
+		await SecureStoragePlugin.set({ key: 'username', value: credentials.username });
+		await SecureStoragePlugin.set({ key: 'password', value: credentials.password });
+	},
   
 	async getApiURL() {
 		try {
@@ -40,6 +46,23 @@ export const AuthService = {
     const token = await this.getToken();
     if (!token) return null;
     return jwtDecode(token);
+  },
+
+  async getCredentials() {
+    try {
+			const { value: domain } = await SecureStoragePlugin.get({ key: 'domain' });
+			const { value: username } = await SecureStoragePlugin.get({ key: 'username' });
+			const { value: password } = await SecureStoragePlugin.get({ key: 'password' });
+			const credentials = {
+				domain: domain,
+				username: username,
+				password: password
+			}
+			return credentials;
+		} catch (err) {
+			console.error('Error accessing credentials:', err);
+			return null;
+		}
   },
 
   async logout() {

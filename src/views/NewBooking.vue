@@ -1,9 +1,9 @@
 <template>
-    <ion-page>
+    <ion-page mode="ios">
       <ion-header :translucent="true">
         <ion-toolbar mode="ios">
 					<ion-buttons slot="start">
-						<ion-back-button text="Cancel"></ion-back-button>
+						<ion-back-button text="Cancel" color="dark"></ion-back-button>
 					</ion-buttons>
           <ion-title><h2>New Booking</h2></ion-title>
           <ion-buttons slot="end">
@@ -92,17 +92,32 @@
                 @ionInput="validate"
                 @ionBlur="markTouched"
               ></ion-input>
+              <ion-input
+                v-model="item.contact_data[0].name"
+                class="mt-input"
+                ref="input"
+                type="text"
+                label="Name"
+                label-placement="floating"
+              ></ion-input>
+              <ion-input
+                v-model="item.contact_data[0].surname"
+                class="mt-input"
+                ref="input"
+                type="text"
+                label="Surname"
+                label-placement="floating"
+              ></ion-input>
             </ion-card-content>
           </ion-card>
-          <!-- <ion-button @click="isOpenCompleteAlert = true">alert</ion-button> -->
-          <ion-card>
+          <!-- <ion-card>
             <ion-card-content>
               <ion-radio-group helper-text="Payments" value="custom-checked">
                 <ion-radio label-placement="end" value="credit" aria-label="Custom checkbox">Credit card</ion-radio><br />
                 <ion-radio label-placement="end" value="cash" aria-label="Custom checkbox that is checked">Cash</ion-radio>
               </ion-radio-group>
             </ion-card-content>
-          </ion-card>
+          </ion-card> -->
           <ion-card>
             <ion-card-content>
               <ion-text class="participants-label">
@@ -113,7 +128,7 @@
           <ion-button class="btn-complete" expand="block" color="dark" size="large" mode="ios" :disabled="item.product_option_id == 0" @click="submitForm()">Complete</ion-button>
         </div>
       </ion-content>
-      <ion-modal :keep-contents-mounted="true" ref="dateModal">
+      <ion-modal :keep-contents-mounted="true" ref="dateModal" id="date-modal">
         <ion-datetime
           id="datetime"
           v-model="dateValue"
@@ -128,7 +143,7 @@
         :buttons="completeAlertButton"
         backdropDismiss="false"
         mode="ios"
-        @didDismiss="goToBookingsList"
+        @didDismiss="goBack"
       ></ion-alert>
       <ion-alert
         :is-open="isOpenNotAvailableDay"
@@ -175,7 +190,7 @@
             { alias: "adult", quantity: 1 }
           ],
           contact_data: [
-            { email: ""}
+            { email: "", name: "", surname: ""}
           ]
         },
         dummyEmail: 'dummy@participant.gr',
@@ -185,114 +200,6 @@
           quantity: 1,
           answer: null
         },
-        availabilityMock: [
-    {
-        "date_time": "2025-04-06 10:00:00+03:00",
-        "vacancies": 22,
-        "group_size": null,
-        "displayable_price": null,
-        "displayable_price_discounted": null,
-        "pricing": [
-            {
-                "participant_type_alias": "adult",
-                "prices": [
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 50.0000,
-                        "pax_from": 1,
-                        "pax_to": 3
-                    },
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 30.0000,
-                        "pax_from": 4,
-                        "pax_to": 22
-                    }
-                ]
-            },
-            {
-                "participant_type_alias": "child",
-                "prices": [
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 20.0000,
-                        "pax_from": 1,
-                        "pax_to": 2
-                    },
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 10.0000,
-                        "pax_from": 3,
-                        "pax_to": 10
-                    }
-                ]
-            },
-            {
-                "participant_type_alias": "infant",
-                "prices": [
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0,
-                        "price_per_participant": 0,
-                        "pax_from": 1,
-                        "pax_to": 5
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "date_time": "2025-04-06 15:00:00+03:00",
-        "vacancies": 18,
-        "group_size": null,
-        "displayable_price": null,
-        "displayable_price_discounted": null,
-        "pricing": [
-            {
-                "participant_type_alias": "adult",
-                "prices": [
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 40.0000,
-                        "pax_from": 1,
-                        "pax_to": 3
-                    },
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 20.0000,
-                        "pax_from": 4,
-                        "pax_to": 18
-                    }
-                ]
-            },
-            {
-                "participant_type_alias": "child",
-                "prices": [
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 10.0000,
-                        "pax_from": 1,
-                        "pax_to": 2
-                    },
-                    {
-                        "pricing_type": "standard",
-                        "fixed_price": 0.0000,
-                        "price_per_participant": 5.0000,
-                        "pax_from": 3,
-                        "pax_to": 10
-                    }
-                ]
-            },
-        ]
-    }
-        ],
         selectedAvailability: {
           date_time: "",
           vacancies: 0,
@@ -392,7 +299,7 @@
             { alias: "adult", quantity: 1 }
           ],
           contact_data: [
-            { email: ""}
+            { email: "", name: "", surname: ""}
           ]
         };
         this.dateValue = format(this.selectedProductOption.activity_date_time, 'yyyy-MM-dd');
@@ -434,9 +341,9 @@
           ]
         };
       },
-      goToBookingsList() {
+      goBack() {
         this.isOpenCompleteAlert = false;
-        this.$router.push('/BookingsList')
+        this.$router.go(-1);
       },
       getAvailabilityFromDatePicker(checkNextDay: boolean) {
         if (this.item.product_id !== 0 && this.item.product_option_id !== 0) {
@@ -470,14 +377,17 @@
 
         const dateFrom = `${this.dateValue}T00:00:00${format(new Date(), 'XXX')}`;
         const dateTo = `${this.dateValue}T23:59:59${format(new Date(), 'XXX')}`;
+        const pricing = true;
 
         try {
           const availability = await this.apiService.getProductOptionAvailability(
             this.item.product_id,
             this.item.product_option_id,
             dateFrom,
-            dateTo
+            dateTo,
+            pricing
           );
+          console.log('availability', availability);
 
           // We format the hours of the availability to assign them on the 'ion-select'
           await this.formatAvailability(availability);
@@ -597,7 +507,11 @@
 
         // 3. Add items
         let participants = this.item.participants.filter(participant => participant.quantity !== 0);
-        let contactData = this.item.contact_data[0].email === '' ? [{"email": this.dummyEmail}] : this.item.contact_data;
+        let contactData = this.item.contact_data as any;
+        if (contactData.email === '') {
+          contactData.email = this.dummyEmail;
+        }
+
         // Because vue is creating 'proxy object', api throughs error, so we re-convert in regular array to fix it
         let participantsFixedProxy = JSON.parse(JSON.stringify(participants));
         let contactDataFixedProxy = JSON.parse(JSON.stringify(contactData));
@@ -808,13 +722,27 @@
   }
 
   ion-button.btn-complete {
-    margin-bottom: 40px;
+    /* margin-bottom: 40px; */
     margin-inline-start: 10px;
     margin-inline-end: 10px;
   }
 
   ion-button.btn-complete::part(native) {
     border-radius: 16px;
+  }
+
+  ion-modal#date-modal {
+    --width: fit-content;
+    --min-width: 250px;
+    --height: fit-content;
+    --border-radius: 6px;
+    --background-color: #fff;
+    --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+  }
+
+  ion-modal#date-modal .wrapper {
+    background-color: #fff;
   }
 </style>
   
