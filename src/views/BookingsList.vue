@@ -86,7 +86,7 @@
                   </ion-item>
                 </ion-list>
               </div>
-              <div v-if="setTimeSlots(date).length == 0 && initialized" class="ion-text-center">
+              <div v-if="setTimeSlots(date).length < 1 && initialized" class="ion-text-center">
                 <p class="time-header" ref="time">All day</p>
                 <h2>No bookings</h2>
               </div>
@@ -237,10 +237,16 @@
       setTimeSlots(date: string) {
         const timesSet = new Set<string>();
 
+        if (!this.bookings || this.bookings.length == 0) {
+          return [];
+        }
         this.bookings.forEach((booking: any) => {
           booking.items.forEach((item: any) => {
             const itemDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd')
             if (itemDate == date) {
+              if (this.listMode == 'byProduct' && booking.booking_status !== 'completed') { 
+                return; // Skip non-completed bookings in product view
+              }
               const time = format(parseISO(item.activity_date_time), 'HH:mm');
               timesSet.add(time);
             }
@@ -388,7 +394,7 @@
           }) => {
             const itemActivityDate = format(parseISO(item.activity_date_time), 'yyyy-MM-dd');
             const itemActivityTime = format(parseISO(item.activity_date_time), 'HH:mm');
-            if (itemActivityDate == date && itemActivityTime == time) {
+            if (itemActivityDate == date && itemActivityTime == time && booking.booking_status == 'completed') {
               const key = `${item.product_id}-${item.product_option_id}-${item.activity_date_time}`;
 
               if (!groups[key]) {

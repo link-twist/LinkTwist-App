@@ -11,6 +11,12 @@ export const AuthService = {
     await SecureStoragePlugin.set({ key: 'auth_token', value: token });
   },
 
+	async setFakeToken() {
+		// This is a JWT token with an expired 'exp' claim (exp: 1609459200, Jan 1, 2021)
+		const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDk0NTkyMDB9.4Xy7kQwQw8wQwQwQwQwQwQwQwQwQwQwQwQwQwQwQwQw';
+		await SecureStoragePlugin.set({ key: 'auth_token', value: expiredToken });
+	},
+
   async setApiURL(domain: string) {
     const apiURL = `https://${domain}.api.link-twist.com`;
     await SecureStoragePlugin.set({ key: 'apiURL', value: apiURL });

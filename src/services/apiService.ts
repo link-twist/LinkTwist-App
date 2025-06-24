@@ -10,6 +10,11 @@ const headers = {
   // 'API-Key': import.meta.env.VITE_API_KEY
 }
 
+const headersWithAuth = {
+  ...headers,
+  'Authorization': 'Bearer ' + await AuthService.getToken(),
+};
+
 export const apiService = {
   async login(request: any) {
     const url = `https://${request.domain}.api.link-twist.com`;
@@ -17,7 +22,7 @@ export const apiService = {
       const response = await CapacitorHttp.request({
         url: `${url}/login`,
         method: 'POST',
-        headers: headers,
+        headers: headersWithAuth,
         data: request
       });
       return response || [];
@@ -26,23 +31,42 @@ export const apiService = {
     }
   },
   async checkIn(request: any) {
-    const headers = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
+    const headersWithAuth = {
+      ...headers,
       'Authorization': 'Bearer ' + await AuthService.getToken(),
-    }
-
+    };
     try {
       const response = await CapacitorHttp.request({
         url: `${await AuthService.getApiURL()}/offline/bookings/items/checkin`,
         method: 'PATCH',
-        headers: headers,
+        headers: headersWithAuth,
         data: request
       });
+
+      if (response && response.status === 401) {
+        // Token expired, handle re-login
+        return await this.handleExpiredToken(request, 'checkin');
+      }
       return response || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
+  },
+  async handleExpiredToken(request: any, fn: string): Promise<any> {
+    const user = await AuthService.getCredentials();
+    const response = await this.login(user);
+    console.log('handleExpiredToken response:', response);
+
+    if (response && response.data.token) {
+      await AuthService.setToken(response.data.token);
+      if (fn === 'checkin') {
+        return await this.checkIn(request); // Await and return the retry
+      } else if (fn === 'availability') {
+        return await this.getParticipantTypeAvailability(request); // Await and return the retry
+      }
+      console.log('Token refreshed successfully, retrying function:', fn);
+    }
+    return;
   },
   async getBooking(booking_code: string) {
     console.log('getBooking', booking_code);
@@ -52,7 +76,7 @@ export const apiService = {
         method: 'GET',
         headers: headers,
       })
-      return response.data || [];
+      return response.status == 200 ? response.data : [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -64,7 +88,12 @@ export const apiService = {
         method: 'GET',
         headers: headers,
       })
-      return response.data || [];
+      if (response.status == 200) {
+        return response.data;
+      } else {
+        alert('Failed to fetch bookings');
+        return [];
+      }
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -112,6 +141,26 @@ export const apiService = {
         method: 'GET',
         headers: headers,
       })
+      return response.data || [];
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  },
+  async getParticipantTypeAvailability(request: any) {
+    const headersWithAuth = {
+      ...headers,
+      'Authorization': 'Bearer ' + await AuthService.getToken(),
+    };
+    try {
+      const response = await CapacitorHttp.request({
+        url: `${await AuthService.getApiURL()}/offline/products/${request.product_id}/options/${request.product_option_id}/availability?from=${encodeURIComponent(request.from)}&to=${encodeURIComponent(request.to)}`,
+        method: 'GET',
+        headers: headersWithAuth,
+      })
+      if (response && response.status === 401) {
+        // Token expired, handle re-login
+        return await this.handleExpiredToken(request, 'availability');
+      }
       return response.data || [];
     } catch (error) {
       console.error('Fetch error:', error);
@@ -187,7 +236,7 @@ export const apiService = {
         headers: headers,
         data: request
       })
-      return response.data || [];
+      return response || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -200,7 +249,7 @@ export const apiService = {
         headers: headers,
         data: request
       })
-      return response.data || [];
+      return response || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -213,7 +262,7 @@ export const apiService = {
         headers: headers,
         data: request
       })
-      return response.data || [];
+      return response || [];
     } catch (error) {
       console.error('Fetch error:', error);
     }

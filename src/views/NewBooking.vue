@@ -139,7 +139,8 @@
       </ion-modal>
       <ion-alert
         :is-open="isOpenCompleteAlert"
-        header="The reservation completed successfully!"
+        header="Booking Completed"
+        message="The reservation completed successfully!"
         :buttons="completeAlertButton"
         backdropDismiss="false"
         mode="ios"
@@ -157,7 +158,7 @@
   
 <script lang="ts">
   import { defineComponent, ref, inject, isProxy, toRaw } from 'vue';
-  import { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonFooter, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonAlert, IonBackButton, IonRadio, IonRadioGroup } from '@ionic/vue';
+  import { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonFooter, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonAlert, alertController, IonBackButton, IonRadio, IonRadioGroup } from '@ionic/vue';
   import { IonCol, IonGrid, IonRow } from '@ionic/vue';
   import { useProductStore } from "@/stores/useProductStore";
   import { apiService } from '@/services/apiService';
@@ -168,7 +169,7 @@
 
   export default defineComponent({
     name: "NewBooking",
-    components: { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonFooter, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonDatetimeButton, IonAlert, IonBackButton, IonRadio, IonRadioGroup },
+    components: { IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonButtons, IonContent, IonHeader, IonFooter, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonModal, IonBadge, IonCol, IonGrid, IonRow, IonDatetime, IonDatetimeButton, IonAlert, alertController, IonBackButton, IonRadio, IonRadioGroup },
     setup() {
       const backButtonText = ref('Go Back');
       const productStore = useProductStore();
@@ -343,7 +344,7 @@
       },
       goBack() {
         this.isOpenCompleteAlert = false;
-        this.$router.go(-1);
+        this.$router.push('/BookingsList');
       },
       getAvailabilityFromDatePicker(checkNextDay: boolean) {
         if (this.item.product_id !== 0 && this.item.product_option_id !== 0) {
@@ -526,8 +527,21 @@
           "contact_data": contactDataFixedProxy
         };
         console.log('addItemsRequest', addItemsRequest);
-        const addItems = await this.apiService.addItems(addItemsRequest);
-        console.log('addItems', addItems);
+        const addItemsResponse = await this.apiService.addItems(addItemsRequest);
+        console.log('addItems', addItemsResponse);
+        if (addItemsResponse && addItemsResponse.status === 200) {
+          // proceed to next steps
+        } else if (addItemsResponse && addItemsResponse.status === 422) {
+          const header = 'No Availability';
+          const message = addItemsResponse.data;
+          this.loaderService.stopLoading(this.loader);
+          return this.presentAlert(header, message);
+        } else {
+          const header = 'Error';
+          const message = 'Something went wrong while submitting the booking. Please try again.'
+          this.loaderService.stopLoading(this.loader);
+          return this.presentAlert(header, message);
+        }
 
         // 4. Add extras
         if (this.selectedExtra.extra_alias && this.selectedExtra.quantity > 0) {
@@ -542,8 +556,22 @@
             "answer": this.selectedExtra.answer
           }
           console.log('addExtrasRequest', addExtrasRequest);
-          const addExtras = await this.apiService.addExtras(addExtrasRequest);
-          console.log('addExtras', addExtras);
+          const addExtrasResponse = await this.apiService.addExtras(addExtrasRequest);
+          console.log('addExtras', addExtrasResponse);
+
+          if (addExtrasResponse && addExtrasResponse.status === 200) {
+            // proceed to next steps
+          } else if (addExtrasResponse && addExtrasResponse.status === 422) {
+            const header = 'No Extras Availability';
+            const message = addExtrasResponse.data;
+            this.loaderService.stopLoading(this.loader);
+            return this.presentAlert(header, message);
+          } else {
+            const header = 'Error';
+            const message = 'Something went wrong while submitting the booking. Please try again.'
+            this.loaderService.stopLoading(this.loader);
+            return this.presentAlert(header, message);
+          }
         }
 
         // 5. Complete booking
@@ -556,12 +584,35 @@
           "schedule_booking_emails": this.item.contact_data[0].email === this.dummyEmail ? false : true
         }
         console.log('completeBookingRequest', completeBookingRequest);
-        const completeBooking = await this.apiService.completeBooking(completeBookingRequest);
-        if(completeBooking) {
+        const completeBookingResponse = await this.apiService.completeBooking(completeBookingRequest);
+
+      if (completeBookingResponse && completeBookingResponse.status === 200) {
+          console.log('completeBooking', completeBookingResponse);
+          this.loaderService.stopLoading(this.loader);
           this.isOpenCompleteAlert = true;
+          return;
+          // proceed to next steps
+        } else if (completeBookingResponse && completeBookingResponse.status === 422) {
+          const header = 'Booking not completed';
+          const message = completeBookingResponse.data;
+          this.loaderService.stopLoading(this.loader);
+          return this.presentAlert(header, message);
+        } else {
+          const header = 'Error';
+          const message = 'Something went wrong while submitting the booking. Please try again.'
+          this.loaderService.stopLoading(this.loader);
+          return this.presentAlert(header, message);
         }
-        console.log('completeBooking', completeBooking);
-        this.loaderService.stopLoading(this.loader);
+      },
+      async presentAlert(header: string, message: string) {
+        const alert = await alertController.create({
+          header: header,
+          message: message,
+          buttons: ['OK'],
+          mode: 'ios'
+        });
+
+        await alert.present();
       },
       minOrder(participantAlias: string) {
         const selectedOption = this.options.find(p => p.id === this.item.product_option_id);

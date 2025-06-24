@@ -44,7 +44,6 @@
                     <ion-list>
                       <ion-item v-for="(option, idx) in productOptionsMap[product.id]" :key="idx">
                         <ion-label>
-                          <!-- Only show the main toggle if there are 0 or more than 1 time slots -->
                           <ion-toggle
                             v-if="(timeSlotsMap[`${product.id}-${option.id}`] || []).length > 1"
                             aria-label="Warning toggle"
@@ -52,9 +51,9 @@
                             @ionChange="stopStartSales(product, option, $event.detail.checked)"
                             v-model="option.salesActive"
                           >
-                            <ion-label>{{ option.title }}</ion-label>
+                            <ion-label style="font-weight: 700;">{{ option.title }}</ion-label>
                           </ion-toggle>
-                          <ion-label v-else style="margin-bottom: 6px;">{{ option.title }}</ion-label>
+                          <ion-label v-else style="margin-bottom: 6px; font-weight: 700;">{{ option.title }}</ion-label>
 
                           <ion-toggle
                             v-for="(timeSlot, tIdx) in timeSlotsMap[`${product.id}-${option.id}`] || []"
@@ -65,8 +64,9 @@
                             v-model="timeSlot.salesActive"
                           >
                             <ion-label>
-                              {{ timeSlot.time }} 
-                              <span v-if="timeSlot.vacancies == 0" class="gray-font-1">Sales stopped</span>
+                              <span style="font-weight: 500;">{{ timeSlot.time }} </span>
+                              <span class="gray-font-1"> Avail. {{ timeSlot.remaining }}</span>
+                              <span v-if="timeSlot.has_stopsales" class="gray-font-1"> &bull; Sales stopped</span>
                             </ion-label>
                           </ion-toggle>
                         </ion-label>
@@ -96,7 +96,8 @@
   import { useProductStore } from "@/stores/useProductStore";
   import { apiService } from '@/services/apiService';
   import { loaderService } from '@/services/loadingService';
-  import { format, parseISO } from "date-fns";
+  import { format, parseISO, set } from "date-fns";
+  import { AuthService } from '@/services/authService';
 
 	export default defineComponent({
 		name: 'ProductsAvailability',
@@ -232,21 +233,23 @@
       },
       async fetchTimeSlots(productId: number, productOptionId: number, selectedDate: string) {
         const timeSlots = [];
-        const pricing = false
-        const availability = await this.apiService.getProductOptionAvailability(
-          productId,
-          productOptionId,
-          selectedDate + 'T00:00:00',
-          selectedDate + 'T23:59:59',
-          pricing
-        );
+        const request = {
+          product_id: productId,
+          product_option_id: productOptionId,
+          from: selectedDate + 'T00:00:00',
+          to: selectedDate + 'T23:59:59'
+        };
 
+        const availability = await this.apiService.getParticipantTypeAvailability(request);
+        console.log(availability);
         if (availability) {
           for (let i = 0; i < availability.length; i++) {
             timeSlots.push({
-              time: format(parseISO(availability[i].date_time), 'HH:mm'),
-              vacancies: availability[i].vacancies,
-              salesActive: availability[i].vacancies > 0
+              time: format(parseISO(availability[i].activity_date_time), 'HH:mm'),
+              has_stopsales: availability[i].has_stopsales,
+              amount: availability[i].amount,
+              remaining: availability[i].remaining,
+              salesActive: !availability[i].has_stopsales
             });
           }
         }
@@ -261,7 +264,7 @@
           map[product.id] = productOptions.map(option => {
             const key = `${product.id}-${option.id}`;
             const slots = this.timeSlotsMap[key] || [];
-            const salesActive = slots.some(slot => slot.vacancies > 0);
+            const salesActive = slots.some(slot => slot.salesActive);
             return {
               ...option,
               salesActive

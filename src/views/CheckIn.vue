@@ -23,12 +23,7 @@
       </ion-refresher>
 
       <div id="container">
-        <ion-card class="ion-text-center" v-if="initialized">
-          <ion-card-content>
-            <ion-card-content>{{ productTitle }}</ion-card-content>
-          </ion-card-content>
-        </ion-card>
-        <ion-grid>
+        <h3 class="title" v-if="initialized">{{ productTitle }}</h3>
           <ion-row>
             <ion-col>
               <ion-button color="dark" mode="md" fill="outline" @click="dateIsOpen = true;">
@@ -190,10 +185,6 @@
               this.presentToast('Check In successful', 'success');
             } else if (response.status === 200 && !ckecked) {
               this.presentToast('Check In Cancelled', 'medium');
-            } else if (response.status === 404) {
-              this.presentToast('Check In failed', 'danger');
-            } else if (response.status === 401) {
-              this.handleExpiredToken(item, ckecked);
             } else {
               this.presentToast('Check In failed', 'danger');
             }
@@ -203,19 +194,6 @@
             console.error('Check In error:', error);
               this.presentToast('Check In failed', 'danger');
           });
-      },
-      async handleExpiredToken(item: any, ckecked: boolean) {
-        const user = await this.AuthService.getCredentials();
-        const response = await this.apiService.login(user);
-
-        if (response && response.data.token) {
-          await this.AuthService.setToken(response.data.token);
-          this.checkIn(item, ckecked);
-        } else {
-            console.error('Check In error:', response);
-            this.presentToast('Check In failed', 'danger');
-        }
-        console.log('User:', user);
       },
       handleProductSelect(id: number) {
         this.productTemp = this.products.find((product: any) => product.id === id);
@@ -244,7 +222,6 @@
         this.initialized = true;
       },
       async getBookings() {
-        console.log('defaultLoader:', this.defaultLoader);
         if (!this.productSelectIsOpen && this.defaultLoader) {
           this.loader = await this.loaderService.startLoader();
         }
@@ -382,6 +359,13 @@
 </script>
 
 <style scoped>
+	.title {
+		margin-left: 12px;
+		font-weight: 700;
+		margin-top: 0;
+		margin-bottom: 5px;
+		font-size: 18px !important;
+	}
   ion-card ion-card-content {
     -webkit-padding-start: 5px;
     padding-inline-start: 5px;
