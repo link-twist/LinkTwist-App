@@ -1,6 +1,6 @@
 <template>
   <ion-page mode="ios">
-    <ion-header :translucent="true" ref="mainHeaderRef">
+    <ion-header :translucent="false" ref="mainHeaderRef">
       <ion-toolbar>
         <ion-buttons :router-link="'/NewBooking'" slot="start">
           <ion-icon class="addButton" :icon="addCircleOutline"></ion-icon>

@@ -3,10 +3,6 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (7.0.0):
     - Capacitor
-  - CapacitorCommunitySqlite (7.0.0):
-    - Capacitor
-    - SQLCipher
-    - ZIPFoundation
   - CapacitorCordova (7.1.0)
   - CapacitorHaptics (7.0.0):
     - Capacitor
@@ -19,18 +15,11 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (7.0.0):
     - Capacitor
-  - SQLCipher (4.7.0):
-    - SQLCipher/standard (= 4.7.0)
-  - SQLCipher/common (4.7.0)
-  - SQLCipher/standard (4.7.0):
-    - SQLCipher/common
   - SwiftKeychainWrapper (4.0.1)
-  - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
-  - "CapacitorCommunitySqlite (from `../../node_modules/@capacitor-community/sqlite`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
@@ -40,17 +29,13 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - SQLCipher
     - SwiftKeychainWrapper
-    - ZIPFoundation
 
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorApp:
     :path: "../../node_modules/@capacitor/app"
-  CapacitorCommunitySqlite:
-    :path: "../../node_modules/@capacitor-community/sqlite"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorHaptics:
@@ -67,17 +52,14 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Capacitor: 68ff8eabbcce387e69767c13b5fbcc1c5399eabc
   CapacitorApp: 45cb7cbef4aa380b9236fd6980033eb5cde6fcd2
-  CapacitorCommunitySqlite: 6501e7349acf998346acf24ef757861bb3f6fc2b
   CapacitorCordova: 866217f32c1d25b326c568a10ea3ed0c36b13e29
   CapacitorHaptics: 1fba3e460e7614349c6d5f868b1fccdc5c87b66d
   CapacitorKeyboard: 2c26c6fccde35023c579fc37d4cae6326d5e6343
   CapacitorSecureStoragePlugin: 8019bd11de7d5832a87c1bb320750dd6cef792d7
   CapacitorSplashScreen: 19cd3573e57507e02d6f34597a8c421e00931487
   CapacitorStatusBar: 438e90beeeefa8276b24e6c5991cb02dd13e51bf
-  SQLCipher: ba9d0076041ed767c5bd3d3f77098318d04a403c
   SwiftKeychainWrapper: 807ba1d63c33a7d0613288512399cd1eda1e470c
-  ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
-PODFILE CHECKSUM: 2932601fcf75c4d9fbda034f50ed1369312c9128
+PODFILE CHECKSUM: 49b5b00c81547aa677a25fb414391081cc38f114
 
 COCOAPODS: 1.16.2

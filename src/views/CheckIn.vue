@@ -24,6 +24,7 @@
 
       <div id="container">
         <h3 class="title" v-if="initialized">{{ productTitle }}</h3>
+        <ion-grid>
           <ion-row>
             <ion-col>
               <ion-button color="dark" mode="md" fill="outline" @click="dateIsOpen = true;">

@@ -172,7 +172,7 @@ ion-chip.time-chip {
 }
 
 .snap-col {
-  flex: 0 0 95vw;
+  flex: 0 0 100%;
   scroll-snap-align: start;
   border-top: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
@@ -248,4 +248,13 @@ ion-modal#date-modal::part(content) {
 ion-modal#date-modal .wrapper {
   background-color: #fff;
   margin: 5px;
+}
+
+ion-modal#date-modal .wrapper ion-toolbar {
+  --background: #fff;
+  --color: var(--ion-text-color);
+}
+
+ion-datetime {
+    --background: #fff;
 }

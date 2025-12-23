@@ -80,6 +80,7 @@
 
 					if (!credentials.username || !credentials.password || !credentials.domain) {
 						alert('Please enter username, domain and password.');
+						this.loaderService.stopLoading(loader);
 						return;
 					}
 
